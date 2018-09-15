@@ -84,42 +84,42 @@ public class ModCheats : MonoBehaviour
 			GameManager.instance.cameraCtrl.camTarget.transform.position = new Vector3(HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, GameManager.instance.cameraCtrl.camTarget.transform.position.z);
 			GameManager.instance.cameraCtrl.transform.position = new Vector3(HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, GameManager.instance.cameraCtrl.transform.position.z);
 		}
-		PlayerData instance = PlayerData.instance;
-		HeroController instance2 = HeroController.instance;
-		GameManager instance3 = GameManager.instance;
+		pd = PlayerData.instance;
+		hc = HeroController.instance;
+		gm = GameManager.instance;
 		if (Input.GetKeyDown(KeyCode.O))
 		{
-			this.SavePos.y = instance2.gameObject.transform.position.y;
-			this.SavePos.x = instance2.gameObject.transform.position.x;
-			this.SaveScene = instance3.GetSceneNameString();
-			this.SaveDeathstate = instance.soulLimited;
-			this.SaveShadePos.x = instance.shadePositionX;
-			this.SaveShadePos.y = instance.shadePositionY;
-			this.SaveShadeScene = instance.shadeScene;
-			this.SaveHealth = instance.health;
-			this.SaveGeo = instance.geo;
+			this.SavePos.y = hc.gameObject.transform.position.y;
+			this.SavePos.x = hc.gameObject.transform.position.x;
+			this.SaveScene = gm.GetSceneNameString();
+			this.SaveDeathstate = pd.soulLimited;
+			this.SaveShadePos.x = pd.shadePositionX;
+			this.SaveShadePos.y = pd.shadePositionY;
+			this.SaveShadeScene = pd.shadeScene;
+			this.SaveHealth = pd.health;
+			this.SaveGeo = pd.geo;
 			this.SaveMade = true;
 		}
 		if (Input.GetKeyDown(KeyCode.L) && this.SaveMade)
 		{
-			instance3.ChangeToScene(this.SaveScene, "", 0f);
+			gm.ChangeToScene(this.SaveScene, "", 0f);
 			this.cameraFollow = true;
-			instance3.ResetSemiPersistentItems();
-			instance.soulLimited = this.SaveDeathstate;
-			instance.geo = this.SaveGeo;
-			while (instance.health < this.SaveHealth)
+			gm.ResetSemiPersistentItems();
+			pd.soulLimited = this.SaveDeathstate;
+			pd.geo = this.SaveGeo;
+			while (pd.health < this.SaveHealth)
 			{
-				instance2.TakeHealth(1);
+				hc.TakeHealth(1);
 			}
-			while (instance.health < this.SaveHealth)
+			while (pd.health < this.SaveHealth)
 			{
-				instance2.AddHealth(1);
+				hc.AddHealth(1);
 			}
 			if (this.SaveDeathstate)
 			{
-				instance.shadePositionX = this.SaveShadePos.x;
-				instance.shadePositionY = this.SaveShadePos.y;
-				instance.shadeScene = this.SaveShadeScene;
+				pd.shadePositionX = this.SaveShadePos.x;
+				pd.shadePositionY = this.SaveShadePos.y;
+				pd.shadeScene = this.SaveShadeScene;
 			}
 		}
 	}
@@ -283,4 +283,7 @@ public class ModCheats : MonoBehaviour
 
 	// Token: 0x04003819 RID: 14361
 	public string SaveScene;
+	private PlayerData pd { get; set; }
+	private HeroController hc { get; set; }
+	private GameManager gm { get; set; }
 }
