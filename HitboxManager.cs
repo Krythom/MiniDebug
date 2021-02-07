@@ -16,16 +16,21 @@ namespace MiniDebug
             get => _showHitboxes;
             set
             {
-                if (_showHitboxes && !value)
+                if (_showHitboxes == value)
                 {
-                    RemoveHitboxes();
-                }
-                else if (!_showHitboxes && value)
-                {
-                    SpawnHitboxes(default, default);
+                    return;
                 }
 
                 _showHitboxes = value;
+
+                if (_showHitboxes)
+                {
+                    SpawnHitboxes(default, default);
+                }
+                else
+                {
+                    RemoveHitboxes();
+                }
             }
         }
 

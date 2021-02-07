@@ -329,7 +329,7 @@ namespace MiniDebug
         private void DestroyLoadScreens()
         {
             foreach (GameObject obj in FindObjectsOfType<GameObject>()
-                        .Where(obj => obj.name.Contains("Blanker")))
+                .Where(obj => obj.name.Contains("Blanker")))
             {
                 Destroy(obj);
             }
