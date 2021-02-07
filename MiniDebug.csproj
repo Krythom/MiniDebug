@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{436FBEAE-7B88-43AE-B476-F9449C07BC23}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MiniDebug</RootNamespace>
+    <AssemblyName>Assembly-CSharp.mm</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>Vanilla\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>Vanilla\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>packages\Mono.Cecil.0.10.4\lib\net35\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>packages\Mono.Cecil.0.10.4\lib\net35\Mono.Cecil.Mdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Pdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>packages\Mono.Cecil.0.10.4\lib\net35\Mono.Cecil.Pdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>packages\Mono.Cecil.0.10.4\lib\net35\Mono.Cecil.Rocks.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod, Version=21.1.11.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MonoMod.21.1.11.1\lib\net35\MonoMod.exe</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Common, Version=21.1.12.5, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MonoMod.Common.21.1.12.5\lib\net35\MonoMod.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour, Version=21.1.11.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MonoMod.RuntimeDetour.21.1.11.1\lib\net35\MonoMod.RuntimeDetour.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=21.1.11.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MonoMod.RuntimeDetour.HookGen.21.1.11.1\lib\net35\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Utils, Version=21.1.11.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MonoMod.Utils.21.1.11.1\lib\net35\MonoMod.Utils.dll</HintPath>
+    </Reference>
+    <Reference Include="PlayMaker">
+      <HintPath>Vanilla\PlayMaker.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>Vanilla\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>Vanilla\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="websocket-sharp, Version=1.0.2.59611, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
+      <HintPath>packages\WebSocketSharp.1.0.3-rc11\lib\websocket-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="HitboxManager.cs" />
+    <Compile Include="Patches\GameManager.cs" />
+    <Compile Include="Patches\OnScreenDebugInfo.cs" />
+    <Compile Include="Patches\SceneManager.cs" />
+    <Compile Include="TikTikServer.cs" />
+    <Compile Include="Util\DeconstructExtensions.cs" />
+    <Compile Include="Util\GUIHelper.cs" />
+    <Compile Include="Util\ReflectionExtensions.cs" />
+    <Compile Include="SaveStateManager.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="MiniDebug.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>cd $(OutDir)
+MonoMod.exe Assembly-CSharp.dll
+del /f Assembly-CSharp.dll
+$(SolutionDir)packages\ILRepack.2.1.0-beta1\tools\ILRepack.exe /out:Assembly-CSharp.dll MONOMODDED_Assembly-CSharp.dll Mono.Cecil.dll MonoMod.RuntimeDetour.dll MonoMod.Utils.dll websocket-sharp.dll
+cd $(SolutionDir)
+if not exist Output mkdir Output
+move /y $(OutDir)Assembly-CSharp.dll Output/Assembly-CSharp.dll</PostBuildEvent>
+  </PropertyGroup>
+</Project>
