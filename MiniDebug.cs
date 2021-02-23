@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using GlobalEnums;
 using MiniDebug.Util;
+using Modding;
 using MonoMod.Cil;
 using UnityEngine;
 using UnityEngine.SceneManagement;

@@ -15,13 +15,9 @@ namespace MiniDebug
 
         public void ResetTikTiks(Scene from, Scene to)
         {
-            Debug.Log("[TIKTIKSERVER] Searching for tiktiks in scene " + to.name);
-
             TikTiks.Clear();
             TikTiks.AddRange(UObject.FindObjectsOfType<GameObject>()
                 .Where(obj => obj.name.StartsWith("Climber ")));
-
-            Debug.Log("[TIKTIKSERVER] Found " + TikTiks.Count);
         }
 
         public void SendTikTiks()
