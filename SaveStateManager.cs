@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using MiniDebug.Util;
+using Modding;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -106,27 +107,28 @@ namespace MiniDebug
             try
             {
                 Directory.CreateDirectory(Application.persistentDataPath + "/Savestates");
+
+                SaveData data = new SaveData
+                {
+                    Name = GM.GetSceneNameString(),
+                    Data = new SaveGameData(PD, SceneData.instance),
+                    SavePos = HC.gameObject.transform.position,
+                    SaveScene = GM.GetSceneNameString(),
+                    SecondaryRoom = GM.nextSceneName
+                };
+
+                data.Data.BeforeSave();
+
                 File.WriteAllText(
                     GetStateFileName(num), 
-                    JsonUtility.ToJson(
-                        new SaveData
-                        {
-                            Name = GM.GetSceneNameString(),
-                            SavedPD = JsonUtility.FromJson<PlayerData>(JsonUtility.ToJson(PD)),
-                            SavedSD = JsonUtility.FromJson<SceneData>(JsonUtility.ToJson(SceneData.instance)),
-                            SavePos = HC.gameObject.transform.position,
-                            SaveScene = GM.GetSceneNameString(),
-                            SecondaryRoom = GM.nextSceneName
-                        },
-                        true
-                    )
+                    JsonUtility.ToJson(data, true)
                 );
 
                 saveNames[num] = GM.GetSceneNameString();
             }
             catch (Exception e)
             {
-                Debug.Log("Failed to save state\n" + e.Message);
+                MiniDebugMod.Instance.Log("Failed to save state\n" + e.Message);
             }
         }
 
@@ -144,18 +146,20 @@ namespace MiniDebug
                 yield break;
             }
 
+            save.Data.AfterLoad();
+
             GM.ChangeToScene("Room_Sly_Storeroom", "", 0f);
             yield return new WaitUntil(() => GM.GetSceneNameString() == "Room_Sly_Storeroom");
             GM.ResetSemiPersistentItems();
             yield return null;
 
-            PD = save.SavedPD;
+            PD = save.Data.playerData;
             GM.playerData = PD;
             HC.playerData = PD;
             HC.geoCounter.playerData = PD;
             HC.GetField<HeroController, HeroAnimationController>("animCtrl").SetField("pd", PD);
 
-            SceneData.instance = GM.sceneData = save.SavedSD;
+            SceneData.instance = GM.sceneData = save.Data.sceneData;
 
             HC.transform.position = save.SavePos;
 
@@ -166,8 +170,8 @@ namespace MiniDebug
 
             HC.geoCounter.geoTextMesh.text = PD.geo.ToString();
 
-            HC.SetMPCharge(save.SavedPD.MPCharge);
-            if (save.SavedPD.MPCharge == 0)
+            HC.SetMPCharge(save.Data.playerData.MPCharge);
+            if (save.Data.playerData.MPCharge == 0)
             {
                 GameCameras.instance.soulOrbFSM.SendEvent("MP LOSE");
             }
@@ -192,11 +196,10 @@ namespace MiniDebug
         public class SaveData
         {
             public string Name;
-            public PlayerData SavedPD;
             public Vector3 SavePos;
             public string SaveScene;
             public string SecondaryRoom;
-            public SceneData SavedSD;
+            public SaveGameData Data;
         }
 
         private enum MenuAction
