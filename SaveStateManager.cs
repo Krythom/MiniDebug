@@ -111,10 +111,11 @@ namespace MiniDebug
                 SaveData data = new SaveData
                 {
                     Name = GM.GetSceneNameString(),
-                    Data = new SaveGameData(PD, SceneData.instance),
                     SavePos = HC.gameObject.transform.position,
                     SaveScene = GM.GetSceneNameString(),
-                    SecondaryRoom = GM.nextSceneName
+                    SecondaryRoom = GM.nextSceneName,
+                    Data = new SaveGameData(PD, SceneData.instance),
+                    HazardRespawn = PD.hazardRespawnLocation
                 };
 
                 data.Data.BeforeSave();
@@ -154,6 +155,8 @@ namespace MiniDebug
             yield return null;
 
             PD = save.Data.playerData;
+            PD.hazardRespawnLocation = save.HazardRespawn;
+
             GM.playerData = PD;
             HC.playerData = PD;
             HC.geoCounter.playerData = PD;
@@ -181,12 +184,12 @@ namespace MiniDebug
 
             yield return new WaitUntil(() => GM.GetSceneNameString() == save.SaveScene);
 
-            if (!duped)
+            if (duped)
             {
-                yield break;
+                USceneManager.LoadScene(save.SecondaryRoom, LoadSceneMode.Additive);
             }
 
-            USceneManager.LoadScene(save.SecondaryRoom, LoadSceneMode.Additive);
+            GM.cameraCtrl.SetMode(CameraController.CameraMode.FOLLOWING);
         }
 
         private string GetStateFileName(int num)
@@ -200,6 +203,7 @@ namespace MiniDebug
             public string SaveScene;
             public string SecondaryRoom;
             public SaveGameData Data;
+            public Vector3 HazardRespawn;
         }
 
         private enum MenuAction
