@@ -2,15 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using GlobalEnums;
 using MiniDebug.Util;
 using Modding;
-using MonoMod.Cil;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using WebSocketSharp;
-using WebSocketSharp.Server;
 
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -18,37 +14,6 @@ namespace MiniDebug
 {
     public class MiniDebug : MonoBehaviour
     {
-        static MiniDebug()
-        {
-            new MonoMod.RuntimeDetour.ILHook
-            (
-                typeof(WebSocket).GetMethod
-                (
-                    "send",
-                    BindingFlags.NonPublic | BindingFlags.Instance,
-                    null,
-                    CallingConventions.Any,
-                    new Type[] { typeof(Opcode), typeof(Stream) },
-                    null
-                ),
-                RemoveCompression
-            );
-        }
-
-        // Required to kill WebSocket compression due to a bug with GZipStream in this version of Unity
-        private static void RemoveCompression(ILContext il)
-        {
-            ILCursor c = new ILCursor(il).Goto(0);
-            c.GotoNext
-            (
-                instr => instr.MatchLdarg(0),
-                instr => instr.MatchLdfld(typeof(WebSocket).GetField("_compression", BindingFlags.NonPublic | BindingFlags.Instance))
-            );
-
-            c.RemoveRange(2);
-            c.Emit(Mono.Cecil.Cil.OpCodes.Ldc_I4_0);
-        }
-
         private static MiniDebug _instance;
         public static MiniDebug Instance
         {
@@ -65,19 +30,6 @@ namespace MiniDebug
                     _instance = gameObject.AddComponent<MiniDebug>();
                     _instance.SaveStateManager = gameObject.AddComponent<SaveStateManager>();
                     _instance.HitboxManager = gameObject.AddComponent<HitboxManager>();
-
-                    _instance.SocketServer = new WebSocketServer(11420);
-                    _instance.SocketServer.AddWebSocketService("/tiktiks", () =>
-                    {
-                        TikTikServer server = new TikTikServer();
-
-                        USceneManager.activeSceneChanged += server.ResetTikTiks;
-                        _instance.OnUpdate += server.SendTikTiks;
-
-                        return server;
-                    });
-
-                    _instance.SocketServer.Start();
 
                     DontDestroyOnLoad(gameObject);
                 }
@@ -106,7 +58,6 @@ namespace MiniDebug
         public Settings Settings { get; private set; } = new Settings();
         public SaveStateManager SaveStateManager { get; private set; }
         public HitboxManager HitboxManager { get; private set; }
-        public WebSocketServer SocketServer { get; private set; }
 
         // Active cheat values
         private bool _noclip;
