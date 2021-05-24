@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MiniDebug.Util;
 using Modding;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
@@ -15,7 +18,11 @@ namespace MiniDebug
         private const int STATE_COUNT = 10;
 
         private MenuAction _currentMenu = MenuAction.None;
-        private string[] saveNames = new string[STATE_COUNT];
+        
+        private List<string> allStates = new(), curSelection = new();
+        private string query = "";
+        private int selector;
+        private string lastSaveState;
 
         private static PlayerData PD
         {
@@ -26,61 +33,107 @@ namespace MiniDebug
         private static HeroController HC => HeroController.instance;
         private static GameManager GM => GameManager.instance;
 
+        private static readonly MiniDebug MD = MiniDebug.Instance;
+
         public void LoadStateNames()
         {
-            for (int i = 0; i < STATE_COUNT; i++)
-            {
-                string path = GetStateFileName(i);
-                if (File.Exists(path))
-                {
-                    SaveData saveData = JsonUtility.FromJson<SaveData>(File.ReadAllText(path));
-                    saveNames[i] = saveData.Name;
-                }
-                else
-                {
-                    saveNames[i] = "Empty Slot";
-                }
-            }
+            allStates.Clear();
+            curSelection.Clear();
+            query = "";
+            selector = 0;
+            
+            allStates.AddRange(Directory.GetFiles($"{Application.persistentDataPath}/Savestates", "*.json", SearchOption.TopDirectoryOnly)
+                .Select(Path.GetFileNameWithoutExtension));
+            allStates.Sort();
+            curSelection = allStates;
         }
 
-        public void CreateSaveState()
-            => _currentMenu = _currentMenu == MenuAction.None
-                ? MenuAction.SaveState
-                : MenuAction.None;
-
         public void LoadSaveState(bool duped)
-            => _currentMenu = _currentMenu == MenuAction.None
+        {
+            _currentMenu = _currentMenu == MenuAction.None
                 ? duped
                     ? MenuAction.LoadStateDuped
                     : MenuAction.LoadState
                 : MenuAction.None;
+            
+            if (_currentMenu == MenuAction.None)
+                return;
+            
+            if (GM.IsGamePaused())
+            {
+                MD.AcceptingInput = false;
+                LoadStateNames();
+
+                try
+                {
+                    InputHandler ih = UIManager.instance.GetField<UIManager, InputHandler>("ih");
+                    ih.acceptingInput = false;
+                    EventSystem.current.sendNavigationEvents = false;
+                }
+                catch (Exception e)
+                {
+                    MiniDebugMod.Instance.Log("Unable to disable UI input\n" + e.Message);
+                }
+            }
+            else if (!string.IsNullOrEmpty(lastSaveState))
+            {
+                StartCoroutine(LoadState(_currentMenu == MenuAction.LoadStateDuped, lastSaveState));
+                _currentMenu = MenuAction.None;
+            }
+            else
+            {
+                _currentMenu = MenuAction.None;
+            }
+        }
 
         private void Update()
         {
-            if (GM.GetSceneNameString() == Constants.MENU_SCENE || _currentMenu == MenuAction.None)
+            if (_currentMenu == MenuAction.None || GM.GetSceneNameString() == Constants.MENU_SCENE)
             {
+                return;
+            }
+            if (!GM.IsGamePaused())
+            {
+                MD.AcceptingInput = true;
                 _currentMenu = MenuAction.None;
                 return;
             }
 
-            for (KeyCode key = KeyCode.Alpha0; key <= KeyCode.Alpha9; key++)
+            if (Input.GetKeyDown(KeyCode.Return))
             {
-                if (!Input.GetKeyDown(key))
-                {
-                    continue;
-                }
+                if (curSelection.Count == 0)
+                    return;
+                
+                lastSaveState = curSelection[selector];
+                bool duped = _currentMenu == MenuAction.LoadStateDuped;
+                CancelMenuInput();
 
-                if (_currentMenu == MenuAction.LoadState || _currentMenu == MenuAction.LoadStateDuped)
-                {
-                    StartCoroutine(LoadState(_currentMenu == MenuAction.LoadStateDuped, key - KeyCode.Alpha0));
-                }
-                else
-                {
-                    SaveState(key - KeyCode.Alpha0);
-                }
-
-                _currentMenu = MenuAction.None;
-                break;
+                StartCoroutine(LoadState(duped, lastSaveState));
+            }
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                CancelMenuInput();
+            }
+            else if (Input.GetKeyDown(KeyCode.Backspace))
+            {
+                if (query.Length == 0)
+                    return;
+                
+                query = query.Substring(0, query.Length - 1);
+                UpdateSelection();
+            }
+            else if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                selector = selector == 0 ? curSelection.Count - 1 : selector - 1;
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                selector = selector == curSelection.Count - 1 ? 0 : selector + 1;
+            }
+            else if (Input.inputString.Length > 0)
+            {
+                query += Input.inputString;
+                UpdateSelection();
             }
         }
 
@@ -92,21 +145,47 @@ namespace MiniDebug
             }
 
             GUIHelper.Config cfg = GUIHelper.SaveConfig();
+            bool wrap = GUI.skin.label.wordWrap;
+            var clipping = GUI.skin.label.clipping;
+            
+            GUI.skin.label.wordWrap = false;
+            GUI.skin.label.clipping = TextClipping.Overflow;
+            
+            GUI.Label(new Rect(0f, 300f, 200f, 200f), "Select a Save to Load From:");
+            GUI.Label(new Rect(0f, 350f, 200f, 200f), ">" + query);
 
-            GUI.Label(new Rect(0f, 300f, 200f, 200f), "Select Which Slot To Save To/Load From:");
-            for (int i = 0; i < STATE_COUNT; i++)
+            int dispOffset = Math.Min(selector, Math.Max(0, curSelection.Count - STATE_COUNT));
+            List<string> shownStates = curSelection.Count <= STATE_COUNT
+                ? curSelection
+                : curSelection.GetRange(dispOffset, STATE_COUNT);
+            for (int i = 0; i < shownStates.Count; i++)
             {
-                GUI.Label(new Rect(0, 350 + 25 * i, 200, 200), $"Slot {i} - {saveNames[i]}");
+                GUI.Label(new Rect(0, 375 + 25 * i, 200, 200), $"{(i == selector - dispOffset ? '*' : ' ')}{shownStates[i]}");
             }
-
+            
             GUIHelper.RestoreConfig(cfg);
+            GUI.skin.label.wordWrap = wrap;
+            GUI.skin.label.clipping = clipping;
         }
 
-        private void SaveState(int num)
+        public void SaveState()
         {
             try
             {
                 Directory.CreateDirectory(Application.persistentDataPath + "/Savestates");
+                string loc = $"{GM.GetSceneNameString()}__{DateTimeString()}";
+
+                if (File.Exists(loc + ".json"))
+                {
+                    for (int i = 0;; i++)
+                    {
+                        if (!File.Exists($"{loc}__{i}.json"))
+                        {
+                            loc = $"{loc}__{i}";
+                            break;
+                        }
+                    }
+                }
 
                 SaveData data = new SaveData
                 {
@@ -121,11 +200,10 @@ namespace MiniDebug
                 data.Data.BeforeSave();
 
                 File.WriteAllText(
-                    GetStateFileName(num), 
+                    $"{Application.persistentDataPath}/Savestates/{loc}.json", 
                     JsonUtility.ToJson(data, true)
                 );
-
-                saveNames[num] = GM.GetSceneNameString();
+                lastSaveState = loc;
             }
             catch (Exception e)
             {
@@ -133,10 +211,10 @@ namespace MiniDebug
             }
         }
 
-        private IEnumerator LoadState(bool duped, int num)
+        private IEnumerator LoadState(bool duped, string state)
         {
             SaveData save;
-            string path = GetStateFileName(num);
+            string path = $"{Application.persistentDataPath}/Savestates/{state}.json";
 
             if (File.Exists(path))
             {
@@ -144,6 +222,7 @@ namespace MiniDebug
             }
             else
             {
+                MiniDebugMod.Instance.Log($"Unable to load savestate {state}, file does not exist");
                 yield break;
             }
 
@@ -192,8 +271,39 @@ namespace MiniDebug
             GM.cameraCtrl.SetMode(CameraController.CameraMode.FOLLOWING);
         }
 
-        private string GetStateFileName(int num)
-            => $"{Application.persistentDataPath}/Savestates/savestate{num}.json";
+        private string DateTimeString()
+        {
+            DateTime now = DateTime.Now;
+            return $"{now.Year}-{now.Month}-{now.Day}_{now.Hour}-{now.Minute}-{now.Second}";
+        }
+
+        private void UpdateSelection()
+        {
+            curSelection = allStates.FindAll(s => s.Contains(query));
+            selector = 0;
+        }
+
+        private void CancelMenuInput()
+        {
+            MD.AcceptingInput = true;
+            UIManager.instance.UIClosePauseMenu();
+            GameCameras.instance.ResumeCameraShake();
+            GM.actorSnapshotUnpaused.TransitionTo(0f);
+            GM.isPaused = false;
+            GM.ui.AudioGoToGameplay(.2f);
+            HC.UnPause();
+            Time.timeScale = 1f;
+            _currentMenu = MenuAction.None;
+            try
+            {
+                InputHandler ih = UIManager.instance.GetField<UIManager, InputHandler>("ih");
+                ih.StartUIInput();
+            }
+            catch (Exception e)
+            {
+                MiniDebugMod.Instance.Log("Unable to restart UI input\n" + e.Message);
+            }
+        }
 
         [Serializable]
         public class SaveData
@@ -209,7 +319,6 @@ namespace MiniDebug
         private enum MenuAction
         {
             None,
-            SaveState,
             LoadState,
             LoadStateDuped
         }

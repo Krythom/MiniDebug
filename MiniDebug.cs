@@ -115,6 +115,7 @@ namespace MiniDebug
         // Misc fields
         private readonly List<Renderer> _invRenders = new List<Renderer>();
         private Vector3 _noclipPos;
+        public bool AcceptingInput { get; set; } = true;
 
         public delegate void UpdateEvent();
         public event UpdateEvent OnUpdate;
@@ -128,11 +129,14 @@ namespace MiniDebug
         {
             OnUpdate?.Invoke();
 
-            foreach ((string key, Action action) in _binds)
+            if (AcceptingInput)
             {
-                if (Input.GetKeyDown(key))
+                foreach ((string key, Action action) in _binds)
                 {
-                    action();
+                    if (Input.GetKeyDown(key))
+                    {
+                        action();
+                    }
                 }
             }
 
@@ -243,7 +247,7 @@ namespace MiniDebug
                 [Settings.noclip] = () => NoClip = !NoClip,
                 [Settings.yeetLoadScreens] = DestroyLoadScreens,
                 [Settings.showHitboxes] = () => HitboxManager.ShowHitboxes = !HitboxManager.ShowHitboxes,
-                [Settings.createSaveState] = SaveStateManager.CreateSaveState,
+                [Settings.createSaveState] = SaveStateManager.SaveState,
                 [Settings.loadSaveState] = () => SaveStateManager.LoadSaveState(false),
                 [Settings.loadSaveStateDuped] = () => SaveStateManager.LoadSaveState(true),
                 [Settings.kill] = () => HC.StartCoroutine("Die"),
