@@ -168,7 +168,7 @@ namespace MiniDebug
             GUI.skin.label.clipping = clipping;
         }
 
-        public void SaveState()
+        public void SaveState(bool detailed)
         {
             try
             {
@@ -187,6 +187,36 @@ namespace MiniDebug
                     }
                 }
 
+                List<EnemyPosition> enemyPositions = new();
+                List<string> breakables = new();
+
+                if (detailed)
+                {
+                    HashSet<GameObject> processed = new();
+                    foreach (var go in FindObjectsOfType<Collider2D>().Select(c2d => c2d.gameObject))
+                    {
+                        if (go.LocateMyFSM("health_manager_enemy") && !processed.Contains(go))
+                        {
+                            processed.Add(go);
+                            enemyPositions.Add(new EnemyPosition
+                            {
+                                Name = go.name,
+                                Pos = go.transform.position
+                            });
+                        }
+                        else if (!processed.Contains(go))
+                        {
+                            var fsm = go.LocateMyFSM("FSM");
+                            if (fsm != null && fsm.FsmEvents.Any(e => e.Name == "BREAKABLE DEACTIVE")
+                                            && fsm.FsmVariables.BoolVariables.First(v => v.Name == "Activated").Value)
+                            {
+                                processed.Add(go);
+                                breakables.Add(go.name + go.transform.position);
+                            }
+                        }
+                    }
+                }
+
                 SaveData data = new SaveData
                 {
                     Name = GM.GetSceneNameString(),
@@ -194,7 +224,9 @@ namespace MiniDebug
                     SaveScene = GM.GetSceneNameString(),
                     SecondaryRoom = GM.nextSceneName,
                     Data = new SaveGameData(PD, SceneData.instance),
-                    HazardRespawn = PD.hazardRespawnLocation
+                    HazardRespawn = PD.hazardRespawnLocation,
+                    EnemyPositions = EnemyPosition.serializeList(enemyPositions),
+                    BrokenBreakables = breakables
                 };
 
                 data.Data.BeforeSave();
@@ -266,9 +298,51 @@ namespace MiniDebug
             if (duped)
             {
                 USceneManager.LoadScene(save.SecondaryRoom, LoadSceneMode.Additive);
+                yield return null; // wait for LoadScene to complete
             }
 
             GM.cameraCtrl.SetMode(CameraController.CameraMode.FOLLOWING);
+
+            List<EnemyPosition> enemyPositions = EnemyPosition.deserializeList(save.EnemyPositions);
+            if (enemyPositions.Count > 0)
+            {
+                var gos = FindObjectsOfType<Collider2D>()
+                    .Select(c2d => c2d.gameObject)
+                    .Where(go => FSMUtility.LocateFSM(go, "health_manager_enemy"))
+                    .GroupBy(go => go.name)
+                    .ToDictionary(x => x.Key, x => x.ToList());
+                foreach (var epos in enemyPositions)
+                {
+                    if (!gos.ContainsKey(epos.Name) || gos[epos.Name].Count == 0)
+                    {
+                        MiniDebugMod.Instance.Log(
+                            $"[WARNING] Couldn't find enemy \"{epos.Name}\" after loading savestate");
+                        continue;
+                    }
+
+                    var go = gos[epos.Name][0];
+                    go.transform.position = epos.Pos;
+                    gos[epos.Name].RemoveAt(0);
+                }
+            }
+
+            if (save.BrokenBreakables.Count > 0)
+            {
+                var breakables = new HashSet<string>(save.BrokenBreakables);
+                foreach (var go in FindObjectsOfType<Collider2D>()
+                             .Select(c2d => c2d.gameObject)
+                             .Where(go =>
+                             {
+                                 var fsm = go.LocateMyFSM("FSM");
+                                 return fsm != null && fsm.FsmEvents.Any(e => e.Name == "BREAKABLE DEACTIVE");
+                             }))
+                {
+                    if (breakables.Contains(go.name + go.transform.position))
+                    {
+                        go.LocateMyFSM("FSM").SendEvent("BREAK");
+                    }
+                }
+            }
         }
 
         private string DateTimeString()
@@ -314,6 +388,8 @@ namespace MiniDebug
             public string SecondaryRoom;
             public SaveGameData Data;
             public Vector3 HazardRespawn;
+            public string EnemyPositions;
+            public List<string> BrokenBreakables;
         }
 
         private enum MenuAction
