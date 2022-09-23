@@ -4,7 +4,7 @@
     <AssemblyName>MiniDebug</AssemblyName>
     <OutputType>Library</OutputType>
     <TargetFramework>net35</TargetFramework>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <AssemblyTitle>HK 1028 Mini Debug</AssemblyTitle>
     <Product>HK 1028 Mini Debug</Product>
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -13,7 +13,7 @@
   <ItemGroup>
     <None Remove=".gitignore" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\References1028\Assembly-CSharp.dll</HintPath>
@@ -28,4 +28,8 @@
       <HintPath>..\..\References1028\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
+  
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight 1028\hollow_knight_Data\Managed\Mods" />
+  </Target>
 </Project>

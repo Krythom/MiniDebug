@@ -247,7 +247,8 @@ namespace MiniDebug
                 [Settings.noclip] = () => NoClip = !NoClip,
                 [Settings.yeetLoadScreens] = DestroyLoadScreens,
                 [Settings.showHitboxes] = () => HitboxManager.ShowHitboxes = !HitboxManager.ShowHitboxes,
-                [Settings.createSaveState] = SaveStateManager.SaveState,
+                [Settings.createSaveState] = () => SaveStateManager.SaveState(false),
+                [Settings.createDetailedSaveState] = () => SaveStateManager.SaveState(true),
                 [Settings.loadSaveState] = () => SaveStateManager.LoadSaveState(false),
                 [Settings.loadSaveStateDuped] = () => SaveStateManager.LoadSaveState(true),
                 [Settings.kill] = () => HC.StartCoroutine("Die"),
@@ -258,8 +259,29 @@ namespace MiniDebug
                 [Settings.hideVignette] = () => VignetteDisabled = !VignetteDisabled,
                 [Settings.increaseTimeScale] = () => TimeScale += 0.1f,
                 [Settings.decreaseTimeScale] = () => TimeScale -= 0.1f,
-                [Settings.resetTimeScale] = () => TimeScale = 1f
+                [Settings.resetTimeScale] = () => TimeScale = 1f,
+                [Settings.giveBadFloat] = () => HC.AffectedByGravity(false),
+                [Settings.revealHiddenAreas] = RevealHiddenAreas,
+                // [Settings._DEBUG] = DEBUG_doThings
             };
+        }
+
+        private void RevealHiddenAreas()
+        {
+            foreach (var go in FindObjectsOfType<Collider2D>().Select(c2d => c2d.gameObject)
+                         .Where(go => go.LocateMyFSM("unmasker")))
+            {
+                go.LocateMyFSM("unmasker").SendEvent("UNCOVER");
+            }
+        }
+
+        private void DEBUG_doThings()
+        {
+            MiniDebugMod.Instance.Log("BEGIN DEBUG INFO");
+
+            
+            
+            MiniDebugMod.Instance.Log("END DEBUG INFO");
         }
 
         private void ToggleInventory()

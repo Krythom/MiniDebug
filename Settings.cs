@@ -18,6 +18,7 @@ namespace MiniDebug
         public string yeetLoadScreens = "[4]";
         public string showHitboxes = "[5]";
         public string createSaveState = "[7]";
+        public string createDetailedSaveState = "[6]";
         public string loadSaveState = "[8]";
         public string loadSaveStateDuped = "[9]";
         public string kill = "[*]";
@@ -29,5 +30,9 @@ namespace MiniDebug
         public string increaseTimeScale = "[";
         public string decreaseTimeScale = "]";
         public string resetTimeScale = "\\";
+        public string giveBadFloat = "f";
+        public string revealHiddenAreas = "r";
+
+        // public string _DEBUG = "y";
     }
 }
