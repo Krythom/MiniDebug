@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GlobalEnums;
+using MiniDebug.Savestates;
 using MiniDebug.Util;
 using Modding;
 using UnityEngine;
@@ -127,6 +128,13 @@ namespace MiniDebug
 
         private void Update()
         {
+            if (ReflectionExtensions.GetField<HeroController, HeroController>(null, "_instance") == null || 
+                ReflectionExtensions.GetField<GameManager, GameManager>(null, "_instance") == null || 
+                !GM.IsGameplayScene())
+            {
+                return;
+            }
+            
             OnUpdate?.Invoke();
 
             if (AcceptingInput)
@@ -204,7 +212,8 @@ namespace MiniDebug
 
         private void OnGUI()
         {
-            if (GM.GetSceneNameString() == Constants.MENU_SCENE || !ShowSpeed)
+            if (ReflectionExtensions.GetField<GameManager, GameManager>(null, "_instance") == null 
+                || GM.GetSceneNameString() == Constants.MENU_SCENE || !ShowSpeed)
             {
                 return;
             }
