@@ -8,7 +8,7 @@ namespace MiniDebug
     {
         public static MiniDebugMod Instance { get; private set; }
 
-        public override string Version => "0.1.4";
+        public override string Version => "0.1.5";
 
         public MiniDebugMod() : base("Mini Debug")
         {

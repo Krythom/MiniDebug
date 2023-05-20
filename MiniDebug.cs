@@ -8,7 +8,6 @@ using MiniDebug.Util;
 using Modding;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace MiniDebug
@@ -288,8 +287,15 @@ namespace MiniDebug
         {
             MiniDebugMod.Instance.Log("BEGIN DEBUG INFO");
 
-            
-            
+            try
+            {
+                
+            }
+            catch (Exception e)
+            {
+                MiniDebugMod.Instance.Log($"Exception: {e}");
+            }
+
             MiniDebugMod.Instance.Log("END DEBUG INFO");
         }
 
