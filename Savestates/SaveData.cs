@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using HutongGames.PlayMaker;
+using HutongGames.PlayMaker.Actions;
 using MiniDebug.Util;
 using Modding;
 using UnityEngine;
@@ -79,34 +81,12 @@ public class SaveData : ISerializationCallbackReceiver
 
             if (detailed)
             {
-                HashSet<GameObject> processed = new();
-                foreach (var meshRenderer in UObject.FindObjectsOfType<MeshRenderer>())
-                {
-                    if (processed.Contains(meshRenderer.gameObject)) continue;
-                    processed.Add(meshRenderer.gameObject);
+                data.AddComponentStatuses();
 
-                    data.ComponentStatuses.Add(new ComponentActiveStatus
-                    {
-                        go = meshRenderer.gameObject.name,
-                        type = meshRenderer.GetType().FullName,
-                        enabled = meshRenderer.enabled
-                    });
-                }
-                
-                processed.Clear();
+                HashSet<GameObject> processedGos = new();
                 foreach (var go in UObject.FindObjectsOfType<Collider2D>().Select(c2d => c2d.gameObject))
                 {
-                    if (processed.Contains(go)) continue;
-
-                    if (go.scene.name is not null and not "DontDestroyOnLoad")
-                    {
-                        data.ComponentStatuses.AddRange(go.GetComponents<Collider2D>().Select(c2d => new ComponentActiveStatus
-                        {
-                            go = c2d.gameObject.name,
-                            type = c2d.GetType().FullName,
-                            enabled = c2d.enabled
-                        }));
-                    }
+                    if (processedGos.Contains(go)) continue;
 
                     if (go.LocateMyFSM("health_manager_enemy"))
                     {
@@ -125,15 +105,13 @@ public class SaveData : ISerializationCallbackReceiver
                             data.BrokenBreakables.Add(go.name + go.transform.position);
                         }
                     }
-                    processed.Add(go);
+                    processedGos.Add(go);
                 }
 
                 foreach (var fsm in UObject.FindObjectsOfType<PlayMakerFSM>())
                 {
-                    if (fsm.gameObject.scene.name is null or "DontDestroyOnLoad")
-                    {
-                        continue;
-                    }
+                    if (fsm.gameObject.scene.name is null or "DontDestroyOnLoad") continue;
+                    
                     try
                     {
                         data.FsmStates.Add(new FsmState
@@ -149,7 +127,7 @@ public class SaveData : ISerializationCallbackReceiver
                     }
                     catch (Exception e)
                     {
-                        MiniDebugMod.Instance.Log($"Exception on {fsm.gameObject.name}-{fsm.FsmName}: {e}");
+                        MiniDebugMod.Instance.Log($"Exception storing state for {fsm.gameObject.name}-{fsm.FsmName}: {e}");
                         throw;
                     }
                 }
@@ -164,6 +142,54 @@ public class SaveData : ISerializationCallbackReceiver
             MiniDebugMod.Instance.Log("Failed to save state\n" + e.Message);
             return null;
         }
+    }
+
+    private void AddComponentStatuses()
+    {
+        HashSet<Component> processedComponents = new();
+
+        bool testAndAdd(Component c)
+        {
+            if (c == null || processedComponents.Contains(c)) return false;
+            processedComponents.Add(c);
+            return true;
+        }
+        foreach (var action in UObject.FindObjectsOfType<PlayMakerFSM>()
+                     .Where(fsm => fsm.gameObject.scene.name is not null and not "DontDestroyOnLoad")
+                     .SelectMany(fsm => fsm.FsmStates)
+                     .SelectMany(s => s.Actions))
+        {
+            var fsm = action.Fsm;
+            switch (action)
+            {
+                case SetCollider sbc:
+                    var sbcComponent = GetOwnerComponent<BoxCollider2D>(fsm, sbc.gameObject);
+                    if (!testAndAdd(sbcComponent)) continue;
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(sbcComponent, sbcComponent.enabled));
+                    break;
+                case SetCircleCollider scc:
+                    var sccComponent = GetOwnerComponent<CircleCollider2D>(fsm, scc.gameObject);
+                    if (!testAndAdd(sccComponent)) continue;
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(sccComponent, sccComponent.enabled));
+                    break;
+                case SetPolygonCollider spc:
+                    var spcComponent = GetOwnerComponent<PolygonCollider2D>(fsm, spc.gameObject);
+                    if (!testAndAdd(spcComponent)) continue;
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(spcComponent, spcComponent.enabled));
+                    break;
+                case SetMeshRenderer smr:
+                    var smrComponent = GetOwnerComponent<MeshRenderer>(fsm, smr.gameObject);
+                    if (!testAndAdd(smrComponent)) continue;
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(smrComponent, smrComponent.enabled));
+                    break;
+            }
+        }
+    }
+
+    private static T GetOwnerComponent<T>(Fsm fsm, FsmOwnerDefault owner) where T : class
+    {
+        var go = fsm.GetOwnerDefaultTarget(owner);
+        return go == null ? null : go.GetComponent<T>();
     }
 
     public static SaveData LoadFromFile(string path)
@@ -347,5 +373,12 @@ public class SaveData : ISerializationCallbackReceiver
         public string go;
         public string type;
         public bool enabled;
+
+        public ComponentActiveStatus(Component c, bool enabled)
+        {
+            this.go = c.gameObject.name;
+            this.type = c.GetType().FullName;
+            this.enabled = enabled;
+        }
     }
 }
