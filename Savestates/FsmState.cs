@@ -9,6 +9,10 @@ public class FsmState
     public string parentName;
     public string fsmName;
     public string stateName;
+
+    public bool waitRealTime;
+    public float waitTimer;
+    
     public SerializableFloatDictionary fsmFloats = new();
     public SerializableIntDictionary fsmInts = new();
     public SerializableBoolDictionary fsmBools = new();

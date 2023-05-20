@@ -114,16 +114,31 @@ public class SaveData : ISerializationCallbackReceiver
                     
                     try
                     {
-                        data.FsmStates.Add(new FsmState
+                        FsmState state = new FsmState
                         {
                             parentName = fsm.gameObject.name,
                             fsmName = fsm.FsmName,
                             stateName = fsm.ActiveStateName,
-                            fsmFloats = FsmVariableHelper.ToDict<SerializableFloatDictionary, float>(fsm.FsmVariables.FloatVariables),
-                            fsmInts = FsmVariableHelper.ToDict<SerializableIntDictionary, int>(fsm.FsmVariables.IntVariables),
-                            fsmBools = FsmVariableHelper.ToDict<SerializableBoolDictionary, bool>(fsm.FsmVariables.BoolVariables),
-                            fsmStrings = FsmVariableHelper.ToDict<SerializableStringDictionary, string>(fsm.FsmVariables.StringVariables)
-                        });
+                            fsmFloats = FsmVariableHelper.ToDict<SerializableFloatDictionary, float>(fsm.FsmVariables
+                                .FloatVariables),
+                            fsmInts = FsmVariableHelper.ToDict<SerializableIntDictionary, int>(fsm.FsmVariables
+                                .IntVariables),
+                            fsmBools = FsmVariableHelper.ToDict<SerializableBoolDictionary, bool>(fsm.FsmVariables
+                                .BoolVariables),
+                            fsmStrings =
+                                FsmVariableHelper.ToDict<SerializableStringDictionary, string>(fsm.FsmVariables
+                                    .StringVariables)
+                        };
+
+                        var wait = fsm.Fsm.ActiveState.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
+                        if (wait != null)
+                        {
+                            state.waitRealTime = (bool)wait.GetType().GetField("realTime").GetValue(wait);
+                            state.waitTimer = (float)wait.GetType()
+                                .GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(wait);
+                        }
+                        
+                        data.FsmStates.Add(state);
                     }
                     catch (Exception e)
                     {
@@ -362,6 +377,17 @@ public class SaveData : ISerializationCallbackReceiver
                     FsmVariableHelper.FromDict(s.fsmStrings, fsm.FsmVariables);
                     
                     fsm.SetState(s.stateName);
+
+                    var wait = fsm.Fsm.ActiveState.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
+                    if (wait != null)
+                    {
+                        var type = wait.GetType();
+                        type.GetField("realTime").SetValue(wait, s.waitRealTime);
+                        type.GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)
+                            .SetValue(wait, s.waitTimer);
+                        type.GetField("startTime", BindingFlags.NonPublic | BindingFlags.Instance)
+                            .SetValue(wait, FsmTime.RealtimeSinceStartup - s.waitTimer);
+                    }
                 }
             }
         }
