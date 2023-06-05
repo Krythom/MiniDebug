@@ -10,13 +10,15 @@ public static class FsmVariableHelper
     public static TDict ToDict<TDict, TVal>(IEnumerable<NamedVariable> vars) where TDict : SerializableDictionary<string, TVal>, new()
     {
         TDict res = new TDict();
+        if (vars == null) return res;
+        
         foreach (var v in vars)
         {
             try
             {
                 res.Add(v.Name, (TVal)v.RawValue);
             }
-            catch (ArgumentException) {}
+            catch (ArgumentException) { }
         }
 
         return res;
