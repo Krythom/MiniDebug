@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using GlobalEnums;
 using HutongGames.PlayMaker;
 using HutongGames.PlayMaker.Actions;
 using MiniDebug.Util;
 using Modding;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
 using MDSer = MiniDebug.Util.Serialization;
 using UObject = UnityEngine.Object;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
@@ -26,6 +26,9 @@ public class SaveData : ISerializationCallbackReceiver
     public string SecondaryRoom;
     public SaveGameData Data;
     public Vector3 HazardRespawn;
+    public float KnightGravityScale = 1f;
+    public Vector2 KnightVelocity;
+    public string KnightTransformParent;
     
     [NonSerialized] public MDSer.SerializableList<EnemyPosition> EnemyPositions = new();
     public List<string> BrokenBreakables = new();
@@ -65,6 +68,7 @@ public class SaveData : ISerializationCallbackReceiver
     {
         try
         {
+            GameObject knight = HC.gameObject;
             SaveData data = new SaveData
             {
                 Name = GM.GetSceneNameString(),
@@ -73,6 +77,9 @@ public class SaveData : ISerializationCallbackReceiver
                 SecondaryRoom = GM.nextSceneName,
                 Data = new SaveGameData(PD, SceneData.instance),
                 HazardRespawn = PD.hazardRespawnLocation,
+                KnightGravityScale = knight.GetComponent<Rigidbody2D>().gravityScale,
+                KnightVelocity = knight.GetComponent<Rigidbody2D>().velocity,
+                KnightTransformParent = knight.transform.parent == null ? "" : HC.gameObject.transform.parent.gameObject.name,
                 EnemyPositions = new MDSer.SerializableList<EnemyPosition>(),
                 BrokenBreakables = new List<string>(),
                 FsmStates = new MDSer.SerializableList<FsmState>(),
@@ -133,17 +140,17 @@ public class SaveData : ISerializationCallbackReceiver
                         var wait = fsm.Fsm.ActiveState.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
                         if (wait != null)
                         {
-                            state.waitRealTime = (bool)wait.GetType().GetField("realTime").GetValue(wait);
-                            state.waitTimer = (float)wait.GetType()
-                                .GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(wait);
+                            state.waitRealTime = ((FsmBool)wait.GetType().GetField("realTime")!.GetValue(wait)).Value;
+                            state.waitTimer = ((FsmFloat)wait.GetType()
+                                .GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(wait)).Value;
                         }
                         
                         data.FsmStates.Add(state);
                     }
                     catch (Exception e)
                     {
-                        MiniDebugMod.Instance.Log($"Exception storing state for {fsm.gameObject.name}-{fsm.FsmName}: {e}");
-                        throw;
+                        MiniDebugMod.Instance.Log(
+                            $"[WARNING] Exception storing FSM state for {fsm.gameObject.name}-{fsm.FsmName}::{fsm.ActiveStateName}: {e}");
                     }
                 }
             }
@@ -261,9 +268,20 @@ public class SaveData : ISerializationCallbackReceiver
         {
             USceneManager.LoadScene(SecondaryRoom, LoadSceneMode.Additive);
             yield return null; // wait for LoadScene to complete
+            GM.nextSceneName = SecondaryRoom;
         }
 
         GM.cameraCtrl.SetMode(CameraController.CameraMode.FOLLOWING);
+
+        Rigidbody2D krb2d = HC.gameObject.GetComponent<Rigidbody2D>();
+        krb2d.gravityScale = KnightGravityScale;
+        krb2d.velocity = KnightVelocity;
+
+        var transformParent = KnightTransformParent == "" ? null : GameObject.Find(KnightTransformParent);
+        if (transformParent != null)
+        {
+            HC.gameObject.transform.SetParent(transformParent.transform);
+        }
 
         if (EnemyPositions.Count > 0)
         {
@@ -383,9 +401,9 @@ public class SaveData : ISerializationCallbackReceiver
                     {
                         var type = wait.GetType();
                         type.GetField("realTime").SetValue(wait, s.waitRealTime);
-                        type.GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)
+                        type.GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)!
                             .SetValue(wait, s.waitTimer);
-                        type.GetField("startTime", BindingFlags.NonPublic | BindingFlags.Instance)
+                        type.GetField("startTime", BindingFlags.NonPublic | BindingFlags.Instance)!
                             .SetValue(wait, FsmTime.RealtimeSinceStartup - s.waitTimer);
                     }
                 }

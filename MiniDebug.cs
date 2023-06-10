@@ -216,17 +216,20 @@ public class MiniDebug : MonoBehaviour
 
     private void OnGUI()
     {
-        if (ReflectionExtensions.GetField<GameManager, GameManager>(null, "_instance") == null 
-            || GM.GetSceneNameString() == Constants.MENU_SCENE || !ShowSpeed)
+        if (!ShowSpeed || ReflectionExtensions.GetField<GameManager, GameManager>(null, "_instance") == null 
+            || GM.GetSceneNameString() == Constants.MENU_SCENE)
         {
             return;
         }
+
+        string[] sceneNames =
+            Enumerable.Range(0, USceneManager.sceneCount).Select(i => USceneManager.GetSceneAt(i).name).ToArray();
 
         GUIHelper.Config cfg = GUIHelper.SaveConfig();
 
         GUI.Label(new Rect(0f, 0f, 200f, 200f), $"(X, Y): {HCRb2d.velocity.x}, {HCRb2d.velocity.y}");
         GUI.Label(new Rect(0f, 50f, 200f, 200f), $"(Xpos, Ypos) {HCRb2d.position.x}, {HCRb2d.position.y}");
-        GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Scene Name) {GM.sceneName}");
+        GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Scene Name) *{String.Join(", ", sceneNames)}");
         GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
         GUI.Label(new Rect(0f, 200f, 200f, 200f), $"(Load Extension) {LoadAdder}");
         GUI.Label(new Rect(0f, 250f, 200f, 200f), $"(Timescale) {TimeScale}");
@@ -294,7 +297,7 @@ public class MiniDebug : MonoBehaviour
 
         try
         {
-                
+            
         }
         catch (Exception e)
         {
