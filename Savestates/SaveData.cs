@@ -227,6 +227,20 @@ public class SaveData : ISerializationCallbackReceiver
     
     public IEnumerator LoadState(bool duped)
     {
+        if (HC.transitionState != HeroTransitionState.WAITING_TO_TRANSITION)
+        {
+            float t = 0;
+            while (HC.transitionState != HeroTransitionState.WAITING_TO_TRANSITION && t <= 3)
+            {
+                t += Time.deltaTime;
+            }
+
+            if (HC.transitionState != HeroTransitionState.WAITING_TO_TRANSITION)
+            {
+                MiniDebugMod.Instance.Log("[WARNING] Failed to stop transitioning after 3 seconds, forcing savestate load");
+            }
+        }
+
         Data.AfterLoad();
 
         GM.ChangeToScene("Room_Sly_Storeroom", "", 0f);
