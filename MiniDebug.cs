@@ -116,7 +116,7 @@ public class MiniDebug : MonoBehaviour
     private readonly List<Renderer> _invRenders = new List<Renderer>();
     private Vector3 _noclipPos;
     public bool AcceptingInput { get; set; } = true;
-    private Vector3? cameraControllerPosition;
+    private Vector3 cameraControllerPosition;
 
     public delegate void UpdateEvent();
     public event UpdateEvent OnUpdate;
@@ -335,30 +335,19 @@ public class MiniDebug : MonoBehaviour
 
     private void OnPostRenderCallback(Camera cam)
     {
-        if (cam == GameCameras.instance.cameraController.cam)
+        if (cam == GameCameras.instance.cameraController.cam && GameManager.instance.IsGameplayScene() && CameraFollow)
         {
-            if (cameraControllerPosition != null)
-            {
-                GameCameras.instance.cameraController.transform.position = cameraControllerPosition.Value;
-                cameraControllerPosition = null;
-            }
+            GameCameras.instance.cameraController.transform.position = cameraControllerPosition;
         }
     }
 
     private void OnPreRenderCallback(Camera cam)
     {
-        if (cam == GameCameras.instance.cameraController.cam)
+        if (cam == GameCameras.instance.cameraController.cam && GameManager.instance.IsGameplayScene() && CameraFollow)
         {
-            if (GameManager.instance.IsNonGameplayScene())
-            {
-                return;
-            }
-            if (CameraFollow && GameManager.instance.hero_ctrl is { } heroCtrl)
-            {
-                cameraControllerPosition = GameCameras.instance.cameraController.transform.position;
-                Vector3 position2 = heroCtrl.transform.position;
-                cam.transform.position = new Vector3(position2.x, position2.y, cam.transform.position.z);
-            }
+            cameraControllerPosition = GameCameras.instance.cameraController.transform.position;
+            Vector3 position2 = HeroController.instance.gameObject.transform.position;
+            cam.transform.position = new Vector3(position2.x, position2.y, cam.transform.position.z);
         }
     }
 }
