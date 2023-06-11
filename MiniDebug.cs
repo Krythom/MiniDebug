@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using GlobalEnums;
 using MiniDebug.Savestates;
 using MiniDebug.Util;
@@ -117,6 +118,7 @@ public class MiniDebug : MonoBehaviour
     private Vector3 _noclipPos;
     public bool AcceptingInput { get; set; } = true;
     private Vector3 cameraControllerPosition;
+    // public FieldInfo cameraGameplayScene = typeof(CameraController).GetField("isGameplayScene", BindingFlags.Instance | BindingFlags.NonPublic);
 
     public delegate void UpdateEvent();
     public event UpdateEvent OnUpdate;
@@ -124,7 +126,7 @@ public class MiniDebug : MonoBehaviour
     private void Start()
     {
         ReloadSettings();
-        Camera.onPreRender += OnPreRenderCallback;
+        Camera.onPreCull += OnPreCullCallback;
         Camera.onPostRender += OnPostRenderCallback;
     }
 
@@ -166,15 +168,6 @@ public class MiniDebug : MonoBehaviour
         {
             Time.timeScale = TimeScale;
         }
-
-        /*if (CameraFollow)
-        {
-            *//*Vector3 heroPosition = heroCtrl.transform.position;
-            GM.cameraCtrl.transform.position = new Vector3(heroPosition.x, heroPosition.y, GM.cameraCtrl.transform.position.z);*//*
-            GM.cameraCtrl.SetField("isGameplayScene", false);
-            GM.cameraCtrl.camTarget.transform.position = new Vector3(HC.gameObject.transform.position.x, HC.gameObject.transform.position.y, GM.cameraCtrl.camTarget.transform.position.z);
-            GM.cameraCtrl.transform.position = new Vector3(HC.gameObject.transform.position.x, HC.gameObject.transform.position.y, GM.cameraCtrl.transform.position.z);
-        }*/
 
         if (!NoClip)
         {
@@ -338,19 +331,18 @@ public class MiniDebug : MonoBehaviour
 
     private void OnPostRenderCallback(Camera cam)
     {
-        if (cam == GameCameras.instance.cameraController.cam && GameManager.instance.IsGameplayScene() && CameraFollow)
+        if (cam == Camera.main && GameManager.instance.IsGameplayScene() && CameraFollow)
         {
-            GameCameras.instance.cameraController.transform.position = cameraControllerPosition;
+            cam.transform.position = cameraControllerPosition;
         }
     }
 
-    private void OnPreRenderCallback(Camera cam)
+    private void OnPreCullCallback(Camera cam)
     {
-        if (cam == GameCameras.instance.cameraController.cam && GameManager.instance.IsGameplayScene() && CameraFollow)
+        if (cam == Camera.main && GameManager.instance.IsGameplayScene() && CameraFollow)
         {
-            cameraControllerPosition = GameCameras.instance.cameraController.transform.position;
-            Vector3 position2 = HeroController.instance.gameObject.transform.position;
-            cam.transform.position = new Vector3(position2.x, position2.y, cam.transform.position.z);
+            cameraControllerPosition = cam.transform.position;
+            cam.transform.position = new Vector3 (HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, cam.transform.position.z);
         }
     }
 }
