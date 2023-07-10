@@ -16,6 +16,7 @@ public class SaveStateManager : MonoBehaviour
     private const int STATE_COUNT = 10;
 
     private MenuAction _currentMenu = MenuAction.None;
+    private bool isLoadMenuFirstFrame = false;
         
     private List<string> allStates = new(), curSelection = new();
     private string query = "";
@@ -55,6 +56,7 @@ public class SaveStateManager : MonoBehaviour
         {
             MD.AcceptingInput = false;
             LoadStateNames();
+            isLoadMenuFirstFrame = true;
 
             try
             {
@@ -114,6 +116,12 @@ public class SaveStateManager : MonoBehaviour
         {
             MD.AcceptingInput = true;
             _currentMenu = MenuAction.None;
+            isLoadMenuFirstFrame = false;
+            return;
+        }
+        if (isLoadMenuFirstFrame)
+        {
+            isLoadMenuFirstFrame = false;
             return;
         }
 
