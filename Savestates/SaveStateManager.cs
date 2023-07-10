@@ -202,7 +202,7 @@ public class SaveStateManager : MonoBehaviour
 
     private void UpdateSelection()
     {
-        curSelection = allStates.FindAll(s => s.Contains(query));
+        curSelection = allStates.FindAll(s => s.ToLowerInvariant().Contains(query.ToLowerInvariant()));
         selector = 0;
     }
 
