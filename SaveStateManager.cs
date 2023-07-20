@@ -230,10 +230,8 @@ namespace MiniDebug
 
                 SaveData data = new SaveData
                 {
-                    Name = GM.GetSceneNameString(),
                     SavePos = HC.gameObject.transform.position,
-                    SaveScene = GM.GetSceneNameString(),
-                    SecondaryRoom = GM.nextSceneName,
+                    Rooms = (from i in Enumerable.Range(0, UnityEngine.SceneManagement.SceneManager.sceneCount) select UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name).ToArray<string>(),
                     Data = new SaveGameData(PD, SceneData.instance),
                     HazardRespawn = PD.hazardRespawnLocation,
                     EnemyPositions = EnemyPosition.serializeList(enemyPositions),
@@ -302,14 +300,17 @@ namespace MiniDebug
             }
 
             yield return null;
-            GM.ChangeToScene(save.SaveScene, "", 0.4f);
 
-            yield return new WaitUntil(() => GM.GetSceneNameString() == save.SaveScene);
+            GM.ChangeToScene(save.Rooms[0], "", 0.4f);
+            yield return new WaitUntil(() => GM.GetSceneNameString() == save.Rooms[0]);
 
             if (duped)
             {
-                USceneManager.LoadScene(save.SecondaryRoom, LoadSceneMode.Additive);
-                yield return null; // wait for LoadScene to complete
+                for (int i = 1; i < save.Rooms.Length; i++)
+                {
+                    USceneManager.LoadScene(save.Rooms[i], LoadSceneMode.Additive);
+                    yield return null; // wait for LoadScene to complete
+                }
             }
 
             GM.cameraCtrl.SetMode(CameraController.CameraMode.FOLLOWING);
@@ -393,10 +394,8 @@ namespace MiniDebug
         [Serializable]
         public class SaveData
         {
-            public string Name;
             public Vector3 SavePos;
-            public string SaveScene;
-            public string SecondaryRoom;
+            public string[] Rooms;
             public SaveGameData Data;
             public Vector3 HazardRespawn;
             public string EnemyPositions;
