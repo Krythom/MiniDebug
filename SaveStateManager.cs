@@ -22,7 +22,7 @@ namespace MiniDebug
         private List<string> allStates = new(), curSelection = new();
         private string query = "";
         private int selector;
-        private string lastSaveState;
+        private string lastSaveState = "quicksave";
 
         private static PlayerData PD
         {
@@ -173,19 +173,30 @@ namespace MiniDebug
             try
             {
                 Directory.CreateDirectory(Application.persistentDataPath + "/Savestates");
-                string loc = $"{GM.GetSceneNameString()}__{DateTimeString()}";
+                string loc;
 
-                if (File.Exists(loc + ".json"))
+                if (GM.IsGamePaused())
                 {
-                    for (int i = 0;; i++)
+             
+                    loc = $"{GM.GetSceneNameString()}__{DateTimeString()}";
+
+                    if (File.Exists(loc + ".json"))
                     {
-                        if (!File.Exists($"{loc}__{i}.json"))
+                        for (int i = 0; ; i++)
                         {
-                            loc = $"{loc}__{i}";
-                            break;
+                            if (!File.Exists($"{loc}__{i}.json"))
+                            {
+                                loc = $"{loc}__{i}";
+                                break;
+                            }
                         }
                     }
                 }
+                else
+                {
+                    loc = $"quicksave";
+                }
+
 
                 List<EnemyPosition> enemyPositions = new();
                 List<string> breakables = new();
