@@ -109,6 +109,8 @@ namespace MiniDebug
         public bool InfHealth { get; private set; }
         public int LoadAdder { get; private set; } = 1;
 
+        public int activeLoad { get; private set; }
+
         // Cheat method dictionary, filled in ReloadSettings
         private Dictionary<string, Action> _binds;
 
@@ -117,6 +119,7 @@ namespace MiniDebug
         private Vector3 _noclipPos;
         public bool AcceptingInput { get; set; } = true;
         private Vector3 cameraControllerPosition;
+        private TransitionPoint[] loadzones;
         public delegate void UpdateEvent();
         public event UpdateEvent OnUpdate;
 
@@ -130,6 +133,8 @@ namespace MiniDebug
         private void Update()
         {
             OnUpdate?.Invoke();
+
+            loadzones = UnityEngine.Object.FindObjectsOfType<TransitionPoint>();
 
             if (AcceptingInput)
             {
@@ -212,7 +217,7 @@ namespace MiniDebug
             GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
             GUI.Label(new Rect(0f, 200f, 200f, 200f), $"(Load Extension) {LoadAdder}");
             GUI.Label(new Rect(0f, 250f, 200f, 200f), $"(Timescale) {TimeScale}");
-            GUI.Label(new Rect(0f, 300f, 200f, 200f), $"(soul) {PD.MPCharge}");
+            GUI.Label(new Rect(0f, 300f, 200f, 200f), $"(SelectedLoad) {this.activeLoad}");
 
             GUIHelper.RestoreConfig(cfg);
         }
@@ -256,6 +261,9 @@ namespace MiniDebug
                 [Settings.decreaseTimeScale] = () => TimeScale -= 0.1f,
                 [Settings.resetTimeScale] = () => TimeScale = 1f,
                 [Settings.giveBadFloat] = () => HC.AffectedByGravity(false),
+                [Settings.increaseSelectedLoad] = () => activeLoad++,
+                [Settings.decreaseSelectedLoad] = () => activeLoad--,
+                [Settings.toggleLoads] = ToggleLoadzones,
                 [Settings.revealHiddenAreas] = RevealHiddenAreas,
                 // [Settings._DEBUG] = DEBUG_doThings
             };
@@ -277,6 +285,23 @@ namespace MiniDebug
             
             
             MiniDebugMod.Instance.Log("END DEBUG INFO");
+        }
+
+        private void ToggleLoadzones()
+        {
+            for (int i = 0; i < this.loadzones.Length; i++)
+            {
+                if (i == this.activeLoad)
+                {
+                    Debug.Log(this.loadzones[i].name + " : Active");
+                    this.loadzones[i].GetComponent<Collider2D>().enabled = true;
+                }
+                else
+                {
+                    Debug.Log(this.loadzones[i].name + " : Inactive");
+                    this.loadzones[i].GetComponent<Collider2D>().enabled = false;
+                }
+            }
         }
 
         private void ToggleInventory()

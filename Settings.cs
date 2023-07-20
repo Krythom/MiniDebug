@@ -32,6 +32,9 @@ namespace MiniDebug
         public string resetTimeScale = "\\";
         public string giveBadFloat = "f";
         public string revealHiddenAreas = "r";
+        public string increaseSelectedLoad = "=";
+        public string decreaseSelectedLoad = "-";
+        public string toggleLoads = "t";
 
         // public string _DEBUG = "y";
     }
