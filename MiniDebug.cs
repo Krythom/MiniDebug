@@ -116,13 +116,15 @@ namespace MiniDebug
         private readonly List<Renderer> _invRenders = new List<Renderer>();
         private Vector3 _noclipPos;
         public bool AcceptingInput { get; set; } = true;
-
+        private Vector3 cameraControllerPosition;
         public delegate void UpdateEvent();
         public event UpdateEvent OnUpdate;
 
         private void Start()
         {
             ReloadSettings();
+            Camera.onPreCull += OnPreCullCallback;
+            Camera.onPostRender += OnPostRenderCallback;
         }
 
         private void Update()
@@ -155,13 +157,6 @@ namespace MiniDebug
             if (Time.timeScale != TimeScale && Time.timeScale != 0f && TimeScale != 1f)
             {
                 Time.timeScale = TimeScale;
-            }
-
-            if (CameraFollow)
-            {
-                GM.cameraCtrl.SetField("isGameplayScene", false);
-                GM.cameraCtrl.camTarget.transform.position = new Vector3(HC.gameObject.transform.position.x, HC.gameObject.transform.position.y, GM.cameraCtrl.camTarget.transform.position.z);
-                GM.cameraCtrl.transform.position = new Vector3(HC.gameObject.transform.position.x, HC.gameObject.transform.position.y, GM.cameraCtrl.transform.position.z);
             }
 
             if (!NoClip)
@@ -310,6 +305,23 @@ namespace MiniDebug
                 .Where(obj => obj.name.Contains("Blanker")))
             {
                 Destroy(obj);
+            }
+        }
+
+        private void OnPostRenderCallback(Camera cam)
+        {
+            if (cam == Camera.main && GameManager.instance.IsGameplayScene() && CameraFollow)
+            {
+                cam.transform.position = cameraControllerPosition;
+            }
+        }
+
+        private void OnPreCullCallback(Camera cam)
+        {
+            if (cam == Camera.main && GameManager.instance.IsGameplayScene() && CameraFollow)
+            {
+                cameraControllerPosition = cam.transform.position;
+                cam.transform.position = new Vector3(HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, cam.transform.position.z);
             }
         }
     }
