@@ -232,7 +232,8 @@ public class SaveData : ISerializationCallbackReceiver
             float t = 0;
             while (HC.transitionState != HeroTransitionState.WAITING_TO_TRANSITION && t <= 3)
             {
-                t += Time.deltaTime;
+                t += Time.unscaledDeltaTime;
+                yield return null;
             }
 
             if (HC.transitionState != HeroTransitionState.WAITING_TO_TRANSITION)
