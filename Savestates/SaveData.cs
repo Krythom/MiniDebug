@@ -24,6 +24,7 @@ public class SaveData : ISerializationCallbackReceiver
     public Vector3 SavePos;
     public string SaveScene;
     public string SecondaryRoom;
+    public string[] LoadedRooms;    // superscedes SaveScene + SecondaryRoom, for dupes with arbitrary # of rooms
     public SaveGameData Data;
     public Vector3 HazardRespawn;
     public float KnightGravityScale = 1f;
@@ -73,8 +74,9 @@ public class SaveData : ISerializationCallbackReceiver
             {
                 Name = GM.GetSceneNameString(),
                 SavePos = HC.gameObject.transform.position,
-                SaveScene = GM.GetSceneNameString(),
-                SecondaryRoom = GM.nextSceneName,
+                // SaveScene = GM.GetSceneNameString(),     // leave as null to mark new format
+                // SecondaryRoom = GM.nextSceneName,
+                LoadedRooms = Enumerable.Range(0, USceneManager.sceneCount).Select(i => USceneManager.GetSceneAt(i).name).ToArray(),
                 Data = new SaveGameData(PD, SceneData.instance),
                 HazardRespawn = PD.hazardRespawnLocation,
                 KnightGravityScale = knight.GetComponent<Rigidbody2D>().gravityScale,
@@ -275,15 +277,41 @@ public class SaveData : ISerializationCallbackReceiver
         }
 
         yield return null;
-        GM.ChangeToScene(SaveScene, "", 0.4f);
 
-        yield return new WaitUntil(() => GM.GetSceneNameString() == SaveScene);
+        bool newSavestateFormat = SaveScene is null or "";
+        if (!newSavestateFormat)
+        {
+            GM.ChangeToScene(SaveScene, "", 0.4f);
+            yield return new WaitUntil(() => GM.GetSceneNameString() == SaveScene);
+        }
+        else
+        {
+            if (LoadedRooms.Length == 0)
+            {
+                MiniDebugMod.Instance.Log($"[ERROR] Savestate has no loaded rooms!");
+                yield break;
+            }
+            
+            GM.ChangeToScene(LoadedRooms[0], "", 0.4f);
+            yield return new WaitUntil(() => GM.GetSceneNameString() == LoadedRooms[0]);
+        }
 
         if (duped)
         {
-            USceneManager.LoadScene(SecondaryRoom, LoadSceneMode.Additive);
-            yield return null; // wait for LoadScene to complete
-            GM.nextSceneName = SecondaryRoom;
+            if (!newSavestateFormat)
+            {
+                USceneManager.LoadScene(SecondaryRoom, LoadSceneMode.Additive);
+                yield return null; // wait for LoadScene to complete
+                GM.nextSceneName = SecondaryRoom;
+            }
+            else
+            {
+                for (int i = 1; i < LoadedRooms.Length; i++)
+                {
+                    USceneManager.LoadScene(LoadedRooms[i], LoadSceneMode.Additive);
+                    yield return null;
+                }
+            }
         }
 
         GM.cameraCtrl.SetMode(CameraController.CameraMode.FOLLOWING);
