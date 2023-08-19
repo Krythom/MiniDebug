@@ -277,10 +277,17 @@ public class MiniDebug : MonoBehaviour
 
     private void RevealHiddenAreas()
     {
-        foreach (var go in FindObjectsOfType<Collider2D>().Select(c2d => c2d.gameObject)
-                     .Where(go => go.LocateMyFSM("unmasker")))
+        foreach (var fsm in FindObjectsOfType<Collider2D>()
+                     .Select(c2d => c2d.gameObject.LocateMyFSM("unmasker"))
+                     .Where(fsm => fsm != null))
         {
-            go.LocateMyFSM("unmasker").SendEvent("UNCOVER");
+            fsm.SendEvent("UNCOVER");
+        }
+
+        foreach (var fsm in FindObjectsOfType<PlayMakerFSM>()
+            .Where(fsm => fsm.gameObject.scene.name != "DontDestroyOnLoad" && fsm.FsmName == "FSM"))
+        {
+            fsm.SendEvent("DOWN INSTANT");
         }
     }
 
