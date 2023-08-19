@@ -8,7 +8,7 @@ public class MiniDebugMod : Mod
 {
     public static MiniDebugMod Instance { get; private set; }
 
-    public override string Version => "0.1.8";
+    public override string Version => "0.1.9";
 
     public MiniDebugMod() : base("Mini Debug")
     {

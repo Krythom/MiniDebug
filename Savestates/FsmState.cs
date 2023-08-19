@@ -12,6 +12,7 @@ public class FsmState
 
     public bool waitRealTime;
     public float waitTimer;
+    public float waitTime;
     
     public SerializableFloatDictionary fsmFloats = new();
     public SerializableIntDictionary fsmInts = new();

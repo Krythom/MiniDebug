@@ -139,12 +139,17 @@ public class SaveData : ISerializationCallbackReceiver
                                     .StringVariables)
                         };
 
-                        var wait = fsm.Fsm.ActiveState.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
-                        if (wait != null)
+                        if (fsm.Fsm.ActiveState != null)
                         {
-                            state.waitRealTime = ((FsmBool)wait.GetType().GetField("realTime")!.GetValue(wait)).Value;
-                            state.waitTimer = ((FsmFloat)wait.GetType()
-                                .GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(wait)).Value;
+                            var wait = fsm.Fsm.ActiveState.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
+                            if (wait != null)
+                            {
+                                state.waitRealTime = (bool)(wait.GetType().GetField("realTime")!.GetValue(wait));
+                                state.waitTimer = (float)(wait.GetType()
+                                    .GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(wait));
+                                state.waitTime = wait is Wait w ? w.time.Value
+                                    : (float)(wait.GetType().GetField("time", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(wait));
+                            }
                         }
                         
                         data.FsmStates.Add(state);
@@ -152,7 +157,7 @@ public class SaveData : ISerializationCallbackReceiver
                     catch (Exception e)
                     {
                         MiniDebugMod.Instance.Log(
-                            $"[WARNING] Exception storing FSM state for {fsm.gameObject.name}-{fsm.FsmName}::{fsm.ActiveStateName}: {e}");
+                            $"[WARNING] Exception storing FSM state for {fsm.gameObject.name}-{fsm.FsmName}::{fsm.Fsm.ActiveState?.Name}: {e}");
                     }
                 }
             }
@@ -179,7 +184,7 @@ public class SaveData : ISerializationCallbackReceiver
             return true;
         }
         foreach (var action in UObject.FindObjectsOfType<PlayMakerFSM>()
-                     .Where(fsm => fsm.gameObject.scene.name is not null and not "DontDestroyOnLoad")
+                     .Where(fsm => (fsm.gameObject.scene.name is not null and not "DontDestroyOnLoad"))
                      .SelectMany(fsm => fsm.FsmStates)
                      .SelectMany(s => s.Actions))
         {
@@ -189,17 +194,17 @@ public class SaveData : ISerializationCallbackReceiver
                 case SetCollider sbc:
                     var sbcComponent = GetOwnerComponent<BoxCollider2D>(fsm, sbc.gameObject);
                     if (!testAndAdd(sbcComponent)) continue;
-                    this.ComponentStatuses.Add(new ComponentActiveStatus(sbcComponent, sbcComponent.enabled));
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(sbcComponent, sbcComponent.isActiveAndEnabled));
                     break;
                 case SetCircleCollider scc:
                     var sccComponent = GetOwnerComponent<CircleCollider2D>(fsm, scc.gameObject);
                     if (!testAndAdd(sccComponent)) continue;
-                    this.ComponentStatuses.Add(new ComponentActiveStatus(sccComponent, sccComponent.enabled));
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(sccComponent, sccComponent.isActiveAndEnabled));
                     break;
                 case SetPolygonCollider spc:
                     var spcComponent = GetOwnerComponent<PolygonCollider2D>(fsm, spc.gameObject);
                     if (!testAndAdd(spcComponent)) continue;
-                    this.ComponentStatuses.Add(new ComponentActiveStatus(spcComponent, spcComponent.enabled));
+                    this.ComponentStatuses.Add(new ComponentActiveStatus(spcComponent, spcComponent.isActiveAndEnabled));
                     break;
                 case SetMeshRenderer smr:
                     var smrComponent = GetOwnerComponent<MeshRenderer>(fsm, smr.gameObject);
@@ -326,6 +331,11 @@ public class SaveData : ISerializationCallbackReceiver
             HC.gameObject.transform.SetParent(transformParent.transform);
         }
 
+        // wait a couple frames for fsms to initialize
+        yield return null;
+        yield return null;
+        yield return null;
+
         if (EnemyPositions.Count > 0)
         {
             var gos = UObject.FindObjectsOfType<Collider2D>()
@@ -414,40 +424,49 @@ public class SaveData : ISerializationCallbackReceiver
 
         if (FsmStates.Count > 0)
         {
-            Dictionary<string, List<FsmState>> states = new();
+            Dictionary<string, Queue<FsmState>> states = new();
             foreach (var fsmState in FsmStates)
             {
                 string k = fsmState.parentName + "-" + fsmState.fsmName;
                 if (!states.ContainsKey(k))
                 {
-                    states.Add(k, new List<FsmState>());
+                    states.Add(k, new Queue<FsmState>());
                 }
-                states[k].Add(fsmState);
+                states[k].Enqueue(fsmState);
             }
 
             foreach (var fsm in UObject.FindObjectsOfType<PlayMakerFSM>())
             {
                 if (states.TryGetValue(fsm.gameObject.name + '-' + fsm.FsmName, out var l) && l.Count > 0)
                 {
-                    FsmState s = l[0];
-                    l.RemoveAt(0);
-                    
+                    FsmState s = l.Dequeue();
+
                     FsmVariableHelper.FromDict(s.fsmFloats, fsm.FsmVariables);
                     FsmVariableHelper.FromDict(s.fsmInts, fsm.FsmVariables);
                     FsmVariableHelper.FromDict(s.fsmBools, fsm.FsmVariables);
                     FsmVariableHelper.FromDict(s.fsmStrings, fsm.FsmVariables);
                     
-                    fsm.SetState(s.stateName);
-
-                    var wait = fsm.Fsm.ActiveState.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
-                    if (wait != null)
+                    if (s.stateName == "")
                     {
-                        var type = wait.GetType();
-                        type.GetField("realTime").SetValue(wait, s.waitRealTime);
-                        type.GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)!
-                            .SetValue(wait, s.waitTimer);
-                        type.GetField("startTime", BindingFlags.NonPublic | BindingFlags.Instance)!
-                            .SetValue(wait, FsmTime.RealtimeSinceStartup - s.waitTimer);
+                        fsm.Fsm.Stop();
+                    }
+                    else
+                    {
+                        if (fsm.ActiveStateName != s.stateName)
+                        {
+                            fsm.SetState(s.stateName);
+                        }
+
+                        var wait = fsm.Fsm.ActiveState?.Actions.FirstOrDefault(a => a is Wait or WaitRandom);
+                        if (wait != null)
+                        {
+                            var type = wait.GetType();
+                            type.GetField("realTime").SetValue(wait, s.waitRealTime);
+                            type.GetField("timer", BindingFlags.NonPublic | BindingFlags.Instance)!
+                                .SetValue(wait, s.waitTimer);
+                            type.GetField("startTime", BindingFlags.NonPublic | BindingFlags.Instance)!
+                                .SetValue(wait, FsmTime.RealtimeSinceStartup - s.waitTimer);
+                        }
                     }
                 }
             }
