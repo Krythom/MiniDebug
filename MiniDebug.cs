@@ -103,7 +103,7 @@ public class MiniDebug : MonoBehaviour
         }
     }
 
-    public bool Superslides { get; private set; } = true;
+    public bool Superslides { get; private set; } = false;
     public bool ShowSpeed { get; private set; }
     public bool VignetteDisabled { get; private set; }
     public bool InfSoul { get; private set; }
