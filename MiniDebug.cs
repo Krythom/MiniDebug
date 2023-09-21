@@ -134,8 +134,6 @@ namespace MiniDebug
         {
             OnUpdate?.Invoke();
 
-            loadzones = UnityEngine.Object.FindObjectsOfType<TransitionPoint>();
-
             if (AcceptingInput)
             {
                 foreach ((string key, Action action) in _binds)
@@ -209,15 +207,17 @@ namespace MiniDebug
                 return;
             }
 
+            string[] scenes = Enumerable.Range(0, UnityEngine.SceneManagement.SceneManager.sceneCount).Select(i => UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name).ToArray<string>();
+
             GUIHelper.Config cfg = GUIHelper.SaveConfig();
 
             GUI.Label(new Rect(0f, 0f, 200f, 200f), $"(X, Y): {HCRb2d.velocity.x}, {HCRb2d.velocity.y}");
-            GUI.Label(new Rect(0f, 50f, 200f, 200f), $"(Xpos, Ypos) {HCRb2d.position.x}, {HCRb2d.position.y}");
-            GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Scene Name) {GM.sceneName}");
-            GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
-            GUI.Label(new Rect(0f, 200f, 200f, 200f), $"(Load Extension) {LoadAdder}");
-            GUI.Label(new Rect(0f, 250f, 200f, 200f), $"(Timescale) {TimeScale}");
-            GUI.Label(new Rect(0f, 300f, 200f, 200f), $"(SelectedLoad) {this.activeLoad}");
+            GUI.Label(new Rect(0f, 25f, 200f, 200f), $"(Xpos, Ypos) {HCRb2d.position.x}, {HCRb2d.position.y}");
+            GUI.Label(new Rect(0f, 50f, 200 * scenes.Length, 200f), $"(Scene Names) {String.Join(", ", scenes)}");
+            GUI.Label(new Rect(0f, 75f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
+            GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Load Extension) {LoadAdder}");
+            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {TimeScale}");
+            GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(SelectedLoad) {this.activeLoad}");
 
             GUIHelper.RestoreConfig(cfg);
         }
@@ -289,6 +289,7 @@ namespace MiniDebug
 
         private void ToggleLoadzones()
         {
+            loadzones = UnityEngine.Object.FindObjectsOfType<TransitionPoint>();
             for (int i = 0; i < this.loadzones.Length; i++)
             {
                 if (i == this.activeLoad)
