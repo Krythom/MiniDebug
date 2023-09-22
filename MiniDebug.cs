@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GlobalEnums;
+using MiniDebug.Hitbox;
 using MiniDebug.Util;
 using Modding;
 using UnityEngine;
