@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GlobalEnums;
+using HutongGames.PlayMaker.Actions;
+using IL.HutongGames.PlayMaker.Actions;
 using MiniDebug.Hitbox;
 using MiniDebug.Util;
 using Modding;
@@ -218,7 +220,7 @@ namespace MiniDebug
             GUI.Label(new Rect(0f, 50f, 200 * scenes.Length, 200f), $"(Scene Names) {String.Join(", ", scenes)}");
             GUI.Label(new Rect(0f, 75f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
             GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Load Extension) {LoadAdder}");
-            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {GameManager.instance.tilemap.width / 2}");
+            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {TimeScale}");
             GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(SelectedLoad) {this.activeLoad}");
 
             GUIHelper.RestoreConfig(cfg);
@@ -267,7 +269,7 @@ namespace MiniDebug
                 [Settings.decreaseSelectedLoad] = () => activeLoad--,
                 [Settings.toggleLoads] = ToggleLoadzones,
                 [Settings.revealHiddenAreas] = RevealHiddenAreas,
-                [Settings.camSetup] = () => camSetup = !camSetup,
+                [Settings.camSetup] = ScreenshotSetup,
                 // [Settings._DEBUG] = DEBUG_doThings
             };
         }
@@ -337,6 +339,21 @@ namespace MiniDebug
             }
         }
 
+        private void ScreenshotSetup()
+        {
+            camSetup = !camSetup;
+            if (camSetup)
+            {
+                GameCameras.instance.hudCanvas.gameObject.SetActive(false);
+                VignetteDisabled = true;
+            }
+            else
+            {
+                GameCameras.instance.hudCanvas.gameObject.SetActive(true);
+                Camera.main.transform.position = new Vector3(Camera.main.transform.position.x, Camera.main.transform.position.y, -38.1f);
+            }
+        }
+
         private void OnPostRenderCallback(Camera cam)
         {
             if (cam == Camera.main && GameManager.instance.IsGameplayScene() && CameraFollow)
@@ -355,7 +372,12 @@ namespace MiniDebug
             else if (cam == Camera.main && GameManager.instance.IsGameplayScene() && camSetup)
             {
                 cameraControllerPosition = cam.transform.position;
-                cam.transform.position = new Vector3(GameManager.instance.tilemap.width/2, GameManager.instance.tilemap.height/2 ,cam.transform.position.z);
+                cam.transform.position = new Vector3(GameManager.instance.tilemap.width / 2, GameManager.instance.tilemap.height / 2, cam.transform.position.z);
+                Camera gameCam = GameManager.instance.cameraCtrl.cam;
+                if (gameCam.WorldToViewportPoint(new Vector3(0, 0, 0)).x < 0 || gameCam.WorldToViewportPoint(new Vector3(0, 0, 0)).y < 0)
+                {
+                    gameCam.transform.position = new Vector3(gameCam.transform.position.x, gameCam.transform.position.y, gameCam.transform.position.z - 1);
+                }
             }
         }
     }
