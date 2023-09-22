@@ -372,7 +372,23 @@ namespace MiniDebug
             else if (cam == Camera.main && GameManager.instance.IsGameplayScene() && camSetup)
             {
                 cameraControllerPosition = cam.transform.position;
-                cam.transform.position = new Vector3(GameManager.instance.tilemap.width / 2, GameManager.instance.tilemap.height / 2, cam.transform.position.z);
+                
+                float maxX = 0;
+                float maxY = 0;
+                tk2dTileMap[] tilemaps = FindObjectsOfType<tk2dTileMap>();
+                foreach (tk2dTileMap tilemap in tilemaps)
+                {
+                    if (tilemap.width > maxX)
+                    {
+                        maxX = tilemap.width;
+                    }
+                    if (tilemap.height > maxY)
+                    {
+                        maxY = tilemap.height;
+                    }
+                }
+                cam.transform.position = new Vector3(maxX / 2, maxY / 2, cam.transform.position.z);
+
                 Camera gameCam = GameManager.instance.cameraCtrl.cam;
                 if (gameCam.WorldToViewportPoint(new Vector3(0, 0, 0)).x < 0 || gameCam.WorldToViewportPoint(new Vector3(0, 0, 0)).y < 0)
                 {
