@@ -8,6 +8,7 @@
     <AssemblyTitle>HK 1028 Mini Debug</AssemblyTitle>
     <Product>HK 1028 Mini Debug</Product>
     <OutputPath>bin\$(Configuration)\</OutputPath>
+	<ReferencePath>C:\Hollow Knight Patches\hollow_knight_1028_minidebug\hollow_knight_Data\Managed</ReferencePath>
   </PropertyGroup>
   
   <ItemGroup>
@@ -16,20 +17,20 @@
   
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\References1028\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(ReferencePath)\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="PlayMaker">
-      <HintPath>..\..\References1028\PlayMaker.dll</HintPath>
+      <HintPath>$(ReferencePath)\PlayMaker.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\References1028\UnityEngine.dll</HintPath>
+      <HintPath>$(ReferencePath)\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\References1028\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(ReferencePath)\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight 1028\hollow_knight_Data\Managed\Mods" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Hollow Knight Patches\hollow_knight_1028_minidebug\hollow_knight_Data\Managed\Mods" />
   </Target>
 </Project>
