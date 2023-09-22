@@ -74,6 +74,7 @@ namespace MiniDebug
             }
         }
 
+        private bool camSetup;
         private bool _cameraFollow;
         public bool CameraFollow
         {
@@ -216,7 +217,7 @@ namespace MiniDebug
             GUI.Label(new Rect(0f, 50f, 200 * scenes.Length, 200f), $"(Scene Names) {String.Join(", ", scenes)}");
             GUI.Label(new Rect(0f, 75f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
             GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Load Extension) {LoadAdder}");
-            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {TimeScale}");
+            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {GameManager.instance.tilemap.width / 2}");
             GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(SelectedLoad) {this.activeLoad}");
 
             GUIHelper.RestoreConfig(cfg);
@@ -265,6 +266,7 @@ namespace MiniDebug
                 [Settings.decreaseSelectedLoad] = () => activeLoad--,
                 [Settings.toggleLoads] = ToggleLoadzones,
                 [Settings.revealHiddenAreas] = RevealHiddenAreas,
+                [Settings.camSetup] = () => camSetup = !camSetup,
                 // [Settings._DEBUG] = DEBUG_doThings
             };
         }
@@ -348,6 +350,11 @@ namespace MiniDebug
             {
                 cameraControllerPosition = cam.transform.position;
                 cam.transform.position = new Vector3(HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, cam.transform.position.z);
+            }
+            else if (cam == Camera.main && GameManager.instance.IsGameplayScene() && camSetup)
+            {
+                cameraControllerPosition = cam.transform.position;
+                cam.transform.position = new Vector3(GameManager.instance.tilemap.width/2, GameManager.instance.tilemap.height/2 ,cam.transform.position.z);
             }
         }
     }
