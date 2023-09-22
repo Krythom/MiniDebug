@@ -2,51 +2,52 @@
 using GlobalEnums;
 using Modding;
 
-namespace MiniDebug;
-
-public class MiniDebugMod : Mod
+namespace MiniDebug
 {
-    public static MiniDebugMod Instance { get; private set; }
-
-    public override string Version => "0.1.9";
-
-    public MiniDebugMod() : base("Mini Debug")
+    public class MiniDebugMod : Mod
     {
-        Instance = this;
-        _ = MiniDebug.Instance;
+        public static MiniDebugMod Instance { get; private set; }
 
-        On.SceneManager.DrawBlackBorders += KillBlackBorders;
-        On.GameManager.PauseGameToggle += PatchSuperslides;
-    }
+        public override string Version => "0.1.4";
 
-    public override float BeforeAdditiveLoad(string scene)
-        => MiniDebug.Instance.LoadAdder;
-
-    private IEnumerator PatchSuperslides(On.GameManager.orig_PauseGameToggle orig, GameManager self)
-    {
-        // Check if the player is in a valid state to superslide
-        if (!MiniDebug.Instance.Superslides
-            || PlayerData.instance.disablePause
-            || self.gameState != GameState.PLAYING
-            || !self.GetField<GameManager, bool>("timeSlowed"))
+        public MiniDebugMod() : base("Mini Debug")
         {
-            yield return orig(self);
-            yield break;
+            Instance = this;
+            _ = MiniDebug.Instance;
+
+            On.SceneManager.DrawBlackBorders += KillBlackBorders;
+            On.GameManager.PauseGameToggle += PatchSuperslides;
         }
 
-        // Remove the freezeframe lock on pausing, reset recoil to ensure max speed
-        self.SetField("timeSlowed", false);
-        HeroController.instance.SetField("recoilSteps", 0);
+        public override float BeforeAdditiveLoad(string scene)
+            => MiniDebug.Instance.LoadAdder;
 
-        // Pause the game to cause a superslide
-        yield return orig(self);
+        private IEnumerator PatchSuperslides(On.GameManager.orig_PauseGameToggle orig, GameManager self)
+        {
+            // Check if the player is in a valid state to superslide
+            if (!MiniDebug.Instance.Superslides
+                || PlayerData.instance.disablePause
+                || self.gameState != GameState.PLAYING
+                || !self.GetField<GameManager, bool>("timeSlowed"))
+            {
+                yield return orig(self);
+                yield break;
+            }
 
-        // Setting timeSlowed back to true causes the pause menu to be uncloseable
-        // The freezeframe that slowed time is definitely over by now
-        // orig_PauseGameToggle contains a large delay
-    }
+            // Remove the freezeframe lock on pausing, reset recoil to ensure max speed
+            self.SetField("timeSlowed", false);
+            HeroController.instance.SetField("recoilSteps", 0);
 
-    private void KillBlackBorders(On.SceneManager.orig_DrawBlackBorders orig, SceneManager self)
-    {
+            // Pause the game to cause a superslide
+            yield return orig(self);
+
+            // Setting timeSlowed back to true causes the pause menu to be uncloseable
+            // The freezeframe that slowed time is definitely over by now
+            // orig_PauseGameToggle contains a large delay
+        }
+
+        private void KillBlackBorders(On.SceneManager.orig_DrawBlackBorders orig, SceneManager self)
+        {
+        }
     }
 }

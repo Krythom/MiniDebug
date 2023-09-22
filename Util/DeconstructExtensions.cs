@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 
-namespace MiniDebug.Util;
-
-public static class DeconstructExtensions
+namespace MiniDebug.Util
 {
-    public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> pair, out TKey first, out TValue second)
+    public static class DeconstructExtensions
     {
-        first = pair.Key;
-        second = pair.Value;
+        public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> pair, out TKey first, out TValue second)
+        {
+            first = pair.Key;
+            second = pair.Value;
+        }
     }
 }
