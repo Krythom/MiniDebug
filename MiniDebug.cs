@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using IL.HutongGames.PlayMaker.Actions;
 using MiniDebug.Hitbox;
 using MiniDebug.Util;
 using Modding;
+using On.HutongGames.PlayMaker.Actions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -220,9 +222,8 @@ namespace MiniDebug
             GUI.Label(new Rect(0f, 50f, 200 * scenes.Length, 200f), $"(Scene Names) {String.Join(", ", scenes)}");
             GUI.Label(new Rect(0f, 75f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
             GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Load Extension) {LoadAdder}");
-            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {TimeScale}");
-            GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(SelectedLoad) {this.activeLoad}");
-
+            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {Camera.allCamerasCount}");
+            GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(SelectedLoad) {activeLoad}");
             GUIHelper.RestoreConfig(cfg);
         }
 
@@ -270,6 +271,7 @@ namespace MiniDebug
                 [Settings.toggleLoads] = ToggleLoadzones,
                 [Settings.revealHiddenAreas] = RevealHiddenAreas,
                 [Settings.camSetup] = ScreenshotSetup,
+                [Settings.screenshot] = Screenshot,
                 // [Settings._DEBUG] = DEBUG_doThings
             };
         }
@@ -351,8 +353,46 @@ namespace MiniDebug
             {
                 GameCameras.instance.hudCanvas.gameObject.SetActive(true);
                 Camera.main.transform.position = new Vector3(Camera.main.transform.position.x, Camera.main.transform.position.y, -38.1f);
+                Camera.main.targetTexture = null;
             }
         }
+
+        private void Screenshot()
+        {
+            Directory.CreateDirectory(Application.persistentDataPath + "/Screenshots");
+            string path = Application.persistentDataPath + "/Screenshots/capture";
+            if (File.Exists(path + ".png"))
+            {
+                for (int i = 0; ; i++)
+                {
+                    if (!File.Exists($"{path}_{i}.png"))
+                    {
+                        path = $"{path}_{i}";
+                        break;
+                    }
+                }
+            }
+
+            float width = Camera.main.ViewportToWorldPoint(new Vector3(1, 0, HC.transform.position.z - Camera.main.transform.position.z)).x - Camera.main.ViewportToWorldPoint(new Vector3(0, 0, HC.transform.position.z - Camera.main.transform.position.z)).x;
+            float scale = (float)Math.Min((width / 28.8), 4);
+
+            Camera cam = Camera.main;
+
+            RenderTexture screenTexture = new RenderTexture((int)(1920 * scale), (int)(1080 * scale), 24, RenderTextureFormat.ARGB32);
+            cam.targetTexture = screenTexture;
+            RenderTexture.active = screenTexture;
+
+            cam.Render();
+
+            Texture2D image = new Texture2D(cam.targetTexture.width, cam.targetTexture.height);
+            image.ReadPixels(new Rect(0, 0, cam.targetTexture.width, cam.targetTexture.height), 0, 0);
+            image.Apply();
+            RenderTexture.active = null;
+
+            byte[] bytes = image.EncodeToPNG();
+            File.WriteAllBytes(path + ".png", bytes);
+        }
+
 
         private void OnPostRenderCallback(Camera cam)
         {

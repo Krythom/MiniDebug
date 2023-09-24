@@ -36,6 +36,7 @@ namespace MiniDebug
         public string decreaseSelectedLoad = "-";
         public string toggleLoads = "t";
         public string camSetup = "b";
+        public string screenshot = "v";
 
         // public string _DEBUG = "y";
     }
