@@ -222,7 +222,7 @@ namespace MiniDebug
             GUI.Label(new Rect(0f, 50f, 200 * scenes.Length, 200f), $"(Scene Names) {String.Join(", ", scenes)}");
             GUI.Label(new Rect(0f, 75f, 200f, 200f), $"(Bench Room) {PD.respawnScene}");
             GUI.Label(new Rect(0f, 100f, 200f, 200f), $"(Load Extension) {LoadAdder}");
-            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {Camera.allCamerasCount}");
+            GUI.Label(new Rect(0f, 125f, 200f, 200f), $"(Timescale) {TimeScale}");
             GUI.Label(new Rect(0f, 150f, 200f, 200f), $"(SelectedLoad) {activeLoad}");
             GUIHelper.RestoreConfig(cfg);
         }
@@ -373,7 +373,7 @@ namespace MiniDebug
                 }
             }
 
-            float width = Camera.main.ViewportToWorldPoint(new Vector3(1, 0, HC.transform.position.z - Camera.main.transform.position.z)).x - Camera.main.ViewportToWorldPoint(new Vector3(0, 0, HC.transform.position.z - Camera.main.transform.position.z)).x;
+            float width = Camera.main.ViewportToWorldPoint(new Vector3(1, 0,Camera.main.transform.position.z)).x - Camera.main.ViewportToWorldPoint(new Vector3(0, 0,Camera.main.transform.position.z)).x;
             float scale = (float)Math.Min((width / 28.8), 4);
 
             Camera cam = Camera.main;
@@ -427,12 +427,18 @@ namespace MiniDebug
                         maxY = tilemap.height;
                     }
                 }
-                cam.transform.position = new Vector3(maxX / 2, maxY / 2, cam.transform.position.z);
 
                 Camera gameCam = GameManager.instance.cameraCtrl.cam;
-                if (gameCam.WorldToViewportPoint(new Vector3(0, 0, 0)).x < 0 || gameCam.WorldToViewportPoint(new Vector3(0, 0, 0)).y < 0)
+                if (maxY > maxX)
                 {
-                    gameCam.transform.position = new Vector3(gameCam.transform.position.x, gameCam.transform.position.y, gameCam.transform.position.z - 1);
+                    double width = gameCam.ViewportToWorldPoint(new Vector3(1, 0, gameCam.transform.position.z)).x - gameCam.ViewportToWorldPoint(new Vector3(0, 0, gameCam.transform.position.z)).x;
+                    gameCam.transform.position = new Vector3(maxX/2 - (float)(width + maxX)/2, maxY/2, (float)(3 * (maxY-1) / (2 * Math.Tan(gameCam.fieldOfView / 2))));
+                }
+                else
+                {
+                    double horizontalFOV = 2 * Math.Atan(Math.Tan(gameCam.fieldOfView/2)*16/9);
+                    double height = gameCam.ViewportToWorldPoint(new Vector3(0, 1, gameCam.transform.position.z)).y - gameCam.ViewportToWorldPoint(new Vector3(0, 0, gameCam.transform.position.z)).y;
+                    gameCam.transform.position = new Vector3(maxX/2, maxY/2 - (float)(height + maxY)/2, (float)(3 * (maxX - 1) / (2 * Math.Tan(horizontalFOV / 2))));
                 }
             }
         }

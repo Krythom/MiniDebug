@@ -31,6 +31,6 @@
   </ItemGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Hollow Knight Patches\hollow_knight_1028_minidebug\hollow_knight_Data\Managed\Mods" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Program Files (x86)\Steam\steamapps\common\Hollow Knight Minidebug\hollow_knight_Data\Managed\Mods" />
   </Target>
 </Project>
