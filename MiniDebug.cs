@@ -408,6 +408,8 @@ namespace MiniDebug
             {
                 cameraControllerPosition = cam.transform.position;
                 cam.transform.position = new Vector3(HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, cam.transform.position.z);
+                HitboxRender.camWorldToScreenMatrix = cam.worldToCameraMatrix;
+                HitboxRender.camProjectionMatrix = cam.projectionMatrix;
             }
             else if (cam == Camera.main && GameManager.instance.IsGameplayScene() && camSetup)
             {

@@ -9,6 +9,9 @@ namespace MiniDebug.Hitbox
 {
     public class HitboxRender : MonoBehaviour
     {
+        public static Matrix4x4 camWorldToScreenMatrix;
+        public static Matrix4x4 camProjectionMatrix;
+
         // ReSharper disable once StructCanBeMadeReadOnly
         private struct HitboxType : IComparable<HitboxType>
         {
@@ -71,7 +74,8 @@ namespace MiniDebug.Hitbox
 
         private Vector2 LocalToScreenPoint(Camera camera, Collider2D collider2D, Vector2 point)
         {
-            Vector2 result = camera.WorldToScreenPoint((Vector2)collider2D.transform.TransformPoint(point + collider2D.offset));
+            Vector2 result = MiniDebug.Instance.CameraFollow ? manualWolrdToScreenPoint((Vector2)collider2D.transform.TransformPoint(point + collider2D.offset)) 
+                : camera.WorldToScreenPoint((Vector2)collider2D.transform.TransformPoint(point + collider2D.offset));
             return new Vector2((int)Math.Round(result.x), (int)Math.Round(Screen.height - result.y));
         }
 
@@ -203,6 +207,29 @@ namespace MiniDebug.Hitbox
                 Vector2 pointA = LocalToScreenPoint(camera, collider2D, points[i]);
                 Vector2 pointB = LocalToScreenPoint(camera, collider2D, points[i + 1]);
                 Drawing.DrawLine(pointA, pointB, hitboxType.Color, lineWidth, true);
+            }
+        }
+
+        private Vector3 manualWolrdToScreenPoint(Vector3 wp)
+        {
+            // calculate view-projection matrix
+            Matrix4x4 mat = camProjectionMatrix * camWorldToScreenMatrix;
+
+            // multiply world point by VP matrix
+            Vector4 temp = mat * new Vector4(wp.x, wp.y, wp.z, 1f);
+
+            if (temp.w == 0f)
+            {
+                // point is exactly on camera focus point, screen point is undefined
+                // unity handles this by returning 0,0,0
+                return Vector3.zero;
+            }
+            else
+            {
+                // convert x and y from clip space to window coordinates
+                temp.x = (temp.x / temp.w + 1f) * .5f * Camera.main.pixelWidth;
+                temp.y = (temp.y / temp.w + 1f) * .5f * Camera.main.pixelHeight;
+                return new Vector3(temp.x, temp.y, wp.z);
             }
         }
     }
