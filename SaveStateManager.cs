@@ -42,7 +42,7 @@ namespace MiniDebug
             query = "";
             selector = 0;
             
-            allStates.AddRange(Directory.GetFiles($"{Application.persistentDataPath}/Savestates", "*.json", SearchOption.TopDirectoryOnly)
+            allStates.AddRange(Directory.GetFiles($"{Application.persistentDataPath}/MiniDebug Savestates", "*.json", SearchOption.TopDirectoryOnly)
                 .Select(Path.GetFileNameWithoutExtension));
             allStates.Sort();
             curSelection = allStates;
@@ -172,7 +172,6 @@ namespace MiniDebug
         {
             try
             {
-                Directory.CreateDirectory(Application.persistentDataPath + "/Savestates");
                 string loc;
 
                 if (GM.IsGamePaused())

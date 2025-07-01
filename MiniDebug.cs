@@ -130,7 +130,8 @@ namespace MiniDebug
         public event UpdateEvent OnUpdate;
 
         private void Start()
-        {
+        {            
+            Directory.CreateDirectory(Application.persistentDataPath + "/MiniDebug Savestates");
             ReloadSettings();
             Camera.onPreCull += OnPreCullCallback;
             Camera.onPostRender += OnPostRenderCallback;
@@ -270,8 +271,6 @@ namespace MiniDebug
                 [Settings.decreaseSelectedLoad] = () => activeLoad--,
                 [Settings.toggleLoads] = ToggleLoadzones,
                 [Settings.revealHiddenAreas] = RevealHiddenAreas,
-                [Settings.camSetup] = ScreenshotSetup,
-                [Settings.screenshot] = Screenshot,
                 // [Settings._DEBUG] = DEBUG_doThings
             };
         }
@@ -340,59 +339,6 @@ namespace MiniDebug
                 Destroy(obj);
             }
         }
-
-        private void ScreenshotSetup()
-        {
-            camSetup = !camSetup;
-            if (camSetup)
-            {
-                GameCameras.instance.hudCanvas.gameObject.SetActive(false);
-                VignetteDisabled = true;
-            }
-            else
-            {
-                GameCameras.instance.hudCanvas.gameObject.SetActive(true);
-                Camera.main.transform.position = new Vector3(Camera.main.transform.position.x, Camera.main.transform.position.y, -38.1f);
-                Camera.main.targetTexture = null;
-            }
-        }
-
-        private void Screenshot()
-        {
-            Directory.CreateDirectory(Application.persistentDataPath + "/Screenshots");
-            string path = Application.persistentDataPath + "/Screenshots/capture";
-            if (File.Exists(path + ".png"))
-            {
-                for (int i = 0; ; i++)
-                {
-                    if (!File.Exists($"{path}_{i}.png"))
-                    {
-                        path = $"{path}_{i}";
-                        break;
-                    }
-                }
-            }
-
-            float width = Camera.main.ViewportToWorldPoint(new Vector3(1, 0,Camera.main.transform.position.z)).x - Camera.main.ViewportToWorldPoint(new Vector3(0, 0,Camera.main.transform.position.z)).x;
-            float scale = (float)Math.Min((width / 28.8), 4);
-
-            Camera cam = Camera.main;
-
-            RenderTexture screenTexture = new RenderTexture((int)(1920 * scale), (int)(1080 * scale), 24, RenderTextureFormat.ARGB32);
-            cam.targetTexture = screenTexture;
-            RenderTexture.active = screenTexture;
-
-            cam.Render();
-
-            Texture2D image = new Texture2D(cam.targetTexture.width, cam.targetTexture.height);
-            image.ReadPixels(new Rect(0, 0, cam.targetTexture.width, cam.targetTexture.height), 0, 0);
-            image.Apply();
-            RenderTexture.active = null;
-
-            byte[] bytes = image.EncodeToPNG();
-            File.WriteAllBytes(path + ".png", bytes);
-        }
-
 
         private void OnPostRenderCallback(Camera cam)
         {

@@ -8,7 +8,6 @@
     <AssemblyTitle>HK 1028 Mini Debug</AssemblyTitle>
     <Product>HK 1028 Mini Debug</Product>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-	<ReferencePath>C:\Hollow Knight Patches\hollow_knight_1028_minidebug\hollow_knight_Data\Managed</ReferencePath>
   </PropertyGroup>
   
   <ItemGroup>
@@ -17,16 +16,16 @@
   
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>$(ReferencePath)\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(SolutionDir)Patches\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="PlayMaker">
-      <HintPath>$(ReferencePath)\PlayMaker.dll</HintPath>
+      <HintPath>$(SolutionDir)Patches\PlayMaker.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>$(ReferencePath)\UnityEngine.dll</HintPath>
+      <HintPath>$(SolutionDir)Patches\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(ReferencePath)\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(SolutionDir)Patches\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   
