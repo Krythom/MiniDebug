@@ -42,7 +42,7 @@ namespace MiniDebug
             query = "";
             selector = 0;
             
-            allStates.AddRange(Directory.GetFiles($"{Application.persistentDataPath}/MiniDebug Savestates", "*.json", SearchOption.TopDirectoryOnly)
+            allStates.AddRange(Directory.GetFiles($"{Application.persistentDataPath}/MiniDebug Savestates/", "*.json", SearchOption.TopDirectoryOnly)
                 .Select(Path.GetFileNameWithoutExtension));
             allStates.Sort();
             curSelection = allStates;
@@ -240,7 +240,7 @@ namespace MiniDebug
                 data.Data.BeforeSave();
 
                 File.WriteAllText(
-                    $"{Application.persistentDataPath}/Savestates/{loc}.json", 
+                    $"{Application.persistentDataPath}/MiniDebug Savestates/{loc}.json", 
                     JsonUtility.ToJson(data, true)
                 );
                 lastSaveState = loc;
@@ -254,7 +254,7 @@ namespace MiniDebug
         private IEnumerator LoadState(bool duped, string state)
         {
             SaveData save;
-            string path = $"{Application.persistentDataPath}/Savestates/{state}.json";
+            string path = $"{Application.persistentDataPath}/MiniDebug Savestates/{state}.json";
 
             if (File.Exists(path))
             {

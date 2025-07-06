@@ -79,7 +79,6 @@ namespace MiniDebug
             }
         }
 
-        private bool camSetup;
         private bool _cameraFollow;
         public bool CameraFollow
         {
@@ -356,38 +355,6 @@ namespace MiniDebug
                 cam.transform.position = new Vector3(HeroController.instance.transform.position.x, HeroController.instance.transform.position.y, cam.transform.position.z);
                 HitboxRender.camWorldToScreenMatrix = cam.worldToCameraMatrix;
                 HitboxRender.camProjectionMatrix = cam.projectionMatrix;
-            }
-            else if (cam == Camera.main && GameManager.instance.IsGameplayScene() && camSetup)
-            {
-                cameraControllerPosition = cam.transform.position;
-                
-                float maxX = 0;
-                float maxY = 0;
-                tk2dTileMap[] tilemaps = FindObjectsOfType<tk2dTileMap>();
-                foreach (tk2dTileMap tilemap in tilemaps)
-                {
-                    if (tilemap.width > maxX)
-                    {
-                        maxX = tilemap.width;
-                    }
-                    if (tilemap.height > maxY)
-                    {
-                        maxY = tilemap.height;
-                    }
-                }
-
-                Camera gameCam = GameManager.instance.cameraCtrl.cam;
-                if (maxY > maxX)
-                {
-                    double width = gameCam.ViewportToWorldPoint(new Vector3(1, 0, gameCam.transform.position.z)).x - gameCam.ViewportToWorldPoint(new Vector3(0, 0, gameCam.transform.position.z)).x;
-                    gameCam.transform.position = new Vector3(maxX/2 - (float)(width + maxX)/2, maxY/2, (float)(3 * (maxY-1) / (2 * Math.Tan(gameCam.fieldOfView / 2))));
-                }
-                else
-                {
-                    double horizontalFOV = 2 * Math.Atan(Math.Tan(gameCam.fieldOfView/2)*16/9);
-                    double height = gameCam.ViewportToWorldPoint(new Vector3(0, 1, gameCam.transform.position.z)).y - gameCam.ViewportToWorldPoint(new Vector3(0, 0, gameCam.transform.position.z)).y;
-                    gameCam.transform.position = new Vector3(maxX/2, maxY/2 - (float)(height + maxY)/2, (float)(3 * (maxX - 1) / (2 * Math.Tan(horizontalFOV / 2))));
-                }
             }
         }
     }
